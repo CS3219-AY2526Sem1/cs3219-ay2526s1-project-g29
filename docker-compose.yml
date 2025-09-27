@@ -1,0 +1,55 @@
+services:
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+
+  collaboration-service:
+    build:
+      context: ./backend/collaboration-service
+    ports:
+      - "${COLLAB_PORT:-8001}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+
+  matching-service:
+    build:
+      context: ./backend/matching-service
+    ports:
+      - "${MATCHING_PORT:-8002}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+
+  question-service:
+    build:
+      context: ./backend/question-service
+    ports:
+      - "${QUESTION_PORT:-8003}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+
+  user-service:
+    build:
+      context: ./backend/user-service
+    ports:
+      - "${USER_PORT:-8004}:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6

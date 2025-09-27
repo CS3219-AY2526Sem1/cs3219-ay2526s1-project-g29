@@ -1,0 +1,25 @@
+.DS_Store
+.vscode/
+
+logs/
+*.log
+
+.env
+.env.*
+
+dist/
+build/
+.cache/
+tmp/
+cache/
+
+.docker/
+docker-data/
+
+node_modules/
+
+# Python can delete if not needed
+**/__pycache__/
+**/.venv/
+**/venv/
+**/env/
