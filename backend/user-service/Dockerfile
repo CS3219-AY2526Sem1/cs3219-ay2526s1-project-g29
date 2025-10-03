@@ -1,20 +1,27 @@
-FROM python:3.12-alpine
+# Use Node.js base image
+FROM node:18-alpine
+
+# Set working directory
 WORKDIR /app
 
-# Tools for healthcheck
+# Add curl for healthcheck
 RUN apk add --no-cache curl
 
-# Tiny Flask app with / and /health
-RUN pip install --no-cache-dir flask
-RUN printf '%s\n' \
-"from flask import Flask" \
-"app = Flask(__name__)" \
-"@app.get('/')" \
-"def root(): return 'service OK'" \
-"@app.get('/health')" \
-"def health(): return 'ok'" \
-"if __name__ == '__main__': app.run(host='0.0.0.0', port=8080)" \
-> app.py
+# Copy package.json and package-lock.json
+COPY package*.json ./
 
-EXPOSE 8080
-CMD [ "python", "app.py" ]
+# Install dependencies
+RUN npm install
+
+# Copy all source files
+COPY . .
+
+# Expose port 3001 (the port your Express server uses)
+EXPOSE 3001
+
+# Create a health endpoint check
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD curl -f http://localhost:3001/health || exit 1
+
+# Start the application
+CMD ["npm", "start"]
