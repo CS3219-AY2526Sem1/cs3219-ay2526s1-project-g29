@@ -1,55 +1,60 @@
 services:
+  # Frontend service
   frontend:
     build:
       context: ./frontend
     ports:
-      - "${FRONTEND_PORT:-3000}:80"
+      - "${FRONTEND_PORT:-3000}:3000"
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost/ > /dev/null || exit 1"]
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:3000/ > /dev/null || exit 1"]
       interval: 10s
       timeout: 2s
       retries: 6
+    depends_on:
+      user-service:
+        condition: service_healthy
 
-  collaboration-service:
-    build:
-      context: ./backend/collaboration-service
-    ports:
-      - "${COLLAB_PORT:-8001}:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
-      interval: 10s
-      timeout: 2s
-      retries: 6
-
-  matching-service:
-    build:
-      context: ./backend/matching-service
-    ports:
-      - "${MATCHING_PORT:-8002}:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
-      interval: 10s
-      timeout: 2s
-      retries: 6
-
-  question-service:
-    build:
-      context: ./backend/question-service
-    ports:
-      - "${QUESTION_PORT:-8003}:8080"
-    healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
-      interval: 10s
-      timeout: 2s
-      retries: 6
-
+  # User service (the only backend service you're currently using)
   user-service:
     build:
       context: ./backend/user-service
     ports:
-      - "${USER_PORT:-8004}:8080"
+      - "${USER_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - ENV=DEV
+      - PORT=3001
+      - DB_LOCAL_URI=mongodb://mongodb:27017/peerprep
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
     healthcheck:
-      test: ["CMD-SHELL", "curl -fsS http://localhost:8080/health > /dev/null || exit 1"]
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3001/health > /dev/null || exit 1",
+        ]
       interval: 10s
       timeout: 2s
       retries: 6
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # MongoDB database
+  mongodb:
+    image: mongo:7-jammy
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=peerprep
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  mongodb_data:

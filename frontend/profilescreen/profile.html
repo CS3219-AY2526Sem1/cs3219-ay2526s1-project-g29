@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PeerPrep - Profile</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/favicon.svg" />
+    <link rel="stylesheet" href="../shared/styles.css" />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <!-- Navigation Header -->
+    <div class="header">
+      <div class="nav-tabs">
+        <a href="#" class="nav-tab active" id="profileTab">Profile</a>
+        <a href="#" class="nav-tab" id="matchTab">Match</a>
+        <a href="#" class="nav-tab" id="historyTab">History</a>
+      </div>
+
+      <div class="logo">PeerPrep</div>
+
+      <div class="user-menu">
+        <div class="user-avatar" id="userAvatar">
+          <i class="user-icon">👤</i>
+        </div>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <a href="../dashboard/dashboard.html" class="dropdown-item"
+            >Dashboard</a
+          >
+          <a href="#" class="dropdown-item" id="logoutBtn">Logout</a>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-container">
+      <!-- Profile Header -->
+      <div class="profile-header">
+        <h1 class="profile-title" id="profileTitle">User's Profile</h1>
+      </div>
+
+      <!-- Stats Section -->
+      <div class="stats-section">
+        <!-- Progress Chart -->
+        <div class="progress-container">
+          <div class="progress-chart">
+            <svg class="progress-ring" width="200" height="200">
+              <circle
+                class="progress-ring-background"
+                stroke="#333"
+                stroke-width="12"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+              />
+              <circle
+                class="progress-ring-easy"
+                stroke="#48bb78"
+                stroke-width="12"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+                stroke-dasharray="0 565.48"
+                id="easyProgress"
+              />
+              <circle
+                class="progress-ring-medium"
+                stroke="#f6e05e"
+                stroke-width="12"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+                stroke-dasharray="0 565.48"
+                id="mediumProgress"
+              />
+              <circle
+                class="progress-ring-hard"
+                stroke="#f56565"
+                stroke-width="12"
+                fill="transparent"
+                r="90"
+                cx="100"
+                cy="100"
+                stroke-dasharray="0 565.48"
+                id="hardProgress"
+              />
+            </svg>
+            <div class="progress-text">
+              <div class="progress-number" id="totalQuestions">0</div>
+              <div class="progress-label">Questions<br />Completed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Legend -->
+        <div class="stats-legend">
+          <div class="legend-item">
+            <div class="legend-dot easy"></div>
+            <span class="legend-text" id="easyCount">0 Easy</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot medium"></div>
+            <span class="legend-text" id="mediumCount">0 Medium</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot hard"></div>
+            <span class="legend-text" id="hardCount">0 Hard</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Additional Profile Information -->
+      <div class="profile-info">
+        <div class="info-card">
+          <h3>Account Information</h3>
+          <div class="info-item">
+            <span class="info-label">Username:</span>
+            <span class="info-value" id="username">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email:</span>
+            <span class="info-value" id="email">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Member since:</span>
+            <span class="info-value" id="memberSince">-</span>
+          </div>
+        </div>
+
+        <!-- Not sure if want this or not. if dun wan then just remove -->
+        <div class="info-card">
+          <h3>Achievements</h3>
+          <div class="achievement-grid">
+            <div class="achievement" id="firstQuestion">
+              <div class="achievement-icon">🎯</div>
+              <div class="achievement-text">First Question</div>
+            </div>
+            <div class="achievement" id="streak7">
+              <div class="achievement-icon">🔥</div>
+              <div class="achievement-text">7-Day Streak</div>
+            </div>
+            <div class="achievement" id="allDifficulties">
+              <div class="achievement-icon">⭐</div>
+              <div class="achievement-text">All Difficulties</div>
+            </div>
+            <div class="achievement" id="tenQuestions">
+              <div class="achievement-icon">🏆</div>
+              <div class="achievement-text">10 Questions</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load modular JavaScript files -->
+    <script type="module" src="js/main.js"></script>
+  </body>
+</html>

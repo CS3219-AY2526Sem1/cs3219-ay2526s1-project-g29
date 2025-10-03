@@ -1,12 +1,21 @@
 {
   "name": "frontend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "PeerPrep Frontend",
+  "main": "index.html",
   "scripts": {
+    "start": "npx http-server . -p 3000 -c-1",
+    "dev": "npx http-server . -p 3000 -c-1 -o",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
-  "keywords": [],
+  "keywords": [
+    "peerprep",
+    "frontend",
+    "login"
+  ],
   "author": "",
-  "license": "ISC"
+  "license": "ISC",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  }
 }
