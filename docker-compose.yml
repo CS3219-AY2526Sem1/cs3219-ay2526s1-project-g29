@@ -1,0 +1,60 @@
+services:
+  # Frontend service
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "${FRONTEND_PORT:-3000}:3000"
+    healthcheck:
+      test:
+        ["CMD-SHELL", "curl -fsS http://localhost:3000/ > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+    depends_on:
+      user-service:
+        condition: service_healthy
+
+  # User service (the only backend service you're currently using)
+  user-service:
+    build:
+      context: ./backend/user-service
+    ports:
+      - "${USER_PORT:-3001}:3001"
+    environment:
+      - NODE_ENV=development
+      - ENV=DEV
+      - PORT=3001
+      - DB_LOCAL_URI=mongodb://mongodb:27017/peerprep
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3001/health > /dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # MongoDB database
+  mongodb:
+    image: mongo:7-jammy
+    ports:
+      - "${MONGO_PORT:-27017}:27017"
+    environment:
+      - MONGO_INITDB_DATABASE=peerprep
+    volumes:
+      - mongodb_data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+
+volumes:
+  mongodb_data:
