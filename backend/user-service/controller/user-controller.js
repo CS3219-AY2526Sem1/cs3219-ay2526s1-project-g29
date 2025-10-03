@@ -11,26 +11,78 @@ import {
   updateUserById as _updateUserById,
   updateUserPrivilegeById as _updateUserPrivilegeById,
 } from "../model/repository.js";
+import {
+  isValidEmail,
+  isValidPassword,
+  isValidSkillLevel,
+  isValidQuestionsCompleted,
+} from "../utils/validation.js";
 
 export async function createUser(req, res) {
   try {
-    const { username, email, password } = req.body;
-    if (username && email && password) {
-      const existingUser = await _findUserByUsernameOrEmail(username, email);
-      if (existingUser) {
-        return res.status(409).json({ message: "username or email already exists" });
-      }
+    const {
+      username,
+      email,
+      password,
+      skillLevel,
+      questionsCompleted,
+    } = req.body;
 
-      const salt = bcrypt.genSaltSync(10);
-      const hashedPassword = bcrypt.hashSync(password, salt);
-      const createdUser = await _createUser(username, email, hashedPassword);
-      return res.status(201).json({
-        message: `Created new user ${username} successfully`,
-        data: formatUserResponse(createdUser),
+    if (!(username && email && password)) {
+      return res.status(400).json({
+        message: "username and/or email and/or password are missing",
       });
-    } else {
-      return res.status(400).json({ message: "username and/or email and/or password are missing" });
     }
+
+    if (!isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (!isValidPassword(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters long and include upper and lower case letters and a number",
+      });
+    }
+
+    let normalizedSkillLevel = "low";
+    if (skillLevel !== undefined) {
+      if (!isValidSkillLevel(skillLevel)) {
+        return res.status(400).json({ message: "Invalid skill level" });
+      }
+      normalizedSkillLevel = skillLevel.toLowerCase();
+    }
+
+    let normalizedQuestionsCompleted = 0;
+    if (questionsCompleted !== undefined) {
+      if (!isValidQuestionsCompleted(questionsCompleted)) {
+        return res.status(400).json({
+          message: "questionsCompleted must be a non-negative integer",
+        });
+      }
+      normalizedQuestionsCompleted = Number(questionsCompleted);
+    }
+
+    const existingUser = await _findUserByUsernameOrEmail(username, email);
+    if (existingUser) {
+      return res
+        .status(409)
+        .json({ message: "username or email already exists" });
+    }
+
+    const salt = bcrypt.genSaltSync(10);
+    const hashedPassword = bcrypt.hashSync(password, salt);
+    const createdUser = await _createUser({
+      username,
+      email,
+      password: hashedPassword,
+      skillLevel: normalizedSkillLevel,
+      questionsCompleted: normalizedQuestionsCompleted,
+    });
+    return res.status(201).json({
+      message: `Created new user ${username} successfully`,
+      data: formatUserResponse(createdUser),
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Unknown error when creating new user!" });
@@ -69,40 +121,97 @@ export async function getAllUsers(req, res) {
 
 export async function updateUser(req, res) {
   try {
-    const { username, email, password } = req.body;
-    if (username || email || password) {
-      const userId = req.params.id;
-      if (!isValidObjectId(userId)) {
-        return res.status(404).json({ message: `User ${userId} not found` });
-      }
-      const user = await _findUserById(userId);
-      if (!user) {
-        return res.status(404).json({ message: `User ${userId} not found` });
-      }
-      if (username || email) {
-        let existingUser = await _findUserByUsername(username);
-        if (existingUser && existingUser.id !== userId) {
-          return res.status(409).json({ message: "username already exists" });
-        }
-        existingUser = await _findUserByEmail(email);
-        if (existingUser && existingUser.id !== userId) {
-          return res.status(409).json({ message: "email already exists" });
-        }
-      }
+    const {
+      username,
+      email,
+      password,
+      skillLevel,
+      questionsCompleted,
+    } = req.body;
 
-      let hashedPassword;
-      if (password) {
-        const salt = bcrypt.genSaltSync(10);
-        hashedPassword = bcrypt.hashSync(password, salt);
-      }
-      const updatedUser = await _updateUserById(userId, username, email, hashedPassword);
-      return res.status(200).json({
-        message: `Updated data for user ${userId}`,
-        data: formatUserResponse(updatedUser),
+    const hasUpdates =
+      username !== undefined ||
+      email !== undefined ||
+      password !== undefined ||
+      skillLevel !== undefined ||
+      questionsCompleted !== undefined;
+
+    if (!hasUpdates) {
+      return res.status(400).json({
+        message:
+          "No field to update: username, email, password, skillLevel and questionsCompleted are all missing!",
       });
-    } else {
-      return res.status(400).json({ message: "No field to update: username and email and password are all missing!" });
     }
+
+    const userId = req.params.id;
+    if (!isValidObjectId(userId)) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    if (email !== undefined && !isValidEmail(email)) {
+      return res.status(400).json({ message: "Invalid email format" });
+    }
+
+    if (password !== undefined && !isValidPassword(password)) {
+      return res.status(400).json({
+        message:
+          "Password must be at least 8 characters long and include upper and lower case letters and a number",
+      });
+    }
+
+    if (skillLevel !== undefined && !isValidSkillLevel(skillLevel)) {
+      return res.status(400).json({ message: "Invalid skill level" });
+    }
+
+    if (
+      questionsCompleted !== undefined &&
+      !isValidQuestionsCompleted(questionsCompleted)
+    ) {
+      return res.status(400).json({
+        message: "questionsCompleted must be a non-negative integer",
+      });
+    }
+
+    if (username !== undefined) {
+      const existingUser = await _findUserByUsername(username);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(409).json({ message: "username already exists" });
+      }
+    }
+
+    if (email !== undefined) {
+      const existingUser = await _findUserByEmail(email);
+      if (existingUser && existingUser.id !== userId) {
+        return res.status(409).json({ message: "email already exists" });
+      }
+    }
+
+    let hashedPassword;
+    if (password !== undefined) {
+      const salt = bcrypt.genSaltSync(10);
+      hashedPassword = bcrypt.hashSync(password, salt);
+    }
+
+    const updatedUser = await _updateUserById(userId, {
+      username,
+      email,
+      password: hashedPassword,
+      skillLevel: skillLevel ? skillLevel.toLowerCase() : undefined,
+      questionsCompleted:
+        questionsCompleted !== undefined
+          ? Number(questionsCompleted)
+          : undefined,
+    });
+
+    return res.status(200).json({
+      message: `Updated data for user ${userId}`,
+      data: formatUserResponse(updatedUser),
+    });
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Unknown error when updating user!" });
@@ -163,5 +272,7 @@ export function formatUserResponse(user) {
     email: user.email,
     isAdmin: user.isAdmin,
     createdAt: user.createdAt,
+    skillLevel: user.skillLevel,
+    questionsCompleted: user.questionsCompleted,
   };
 }

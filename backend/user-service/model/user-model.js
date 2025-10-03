@@ -13,6 +13,16 @@ const UserModelSchema = new Schema({
     required: true,
     unique: true,
   },
+  skillLevel: {
+    type: String,
+    enum: ["low", "medium", "high"],
+    default: "low",
+  },
+  questionsCompleted: {
+    type: Number,
+    default: 0,
+    min: 0,
+  },
   password: {
     type: String,
     required: true,
