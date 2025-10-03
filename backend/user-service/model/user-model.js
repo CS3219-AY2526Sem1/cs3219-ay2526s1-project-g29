@@ -11,7 +11,21 @@ const UserModelSchema = new Schema({
   email: {
     type: String,
     required: true,
+  },
+  emailHash: {
+    type: String,
+    required: true,
     unique: true,
+  },
+  skillLevel: {
+    type: String,
+    enum: ["low", "medium", "high"],
+    default: "low",
+  },
+  questionsCompleted: {
+    type: Number,
+    default: 0,
+    min: 0,
   },
   password: {
     type: String,

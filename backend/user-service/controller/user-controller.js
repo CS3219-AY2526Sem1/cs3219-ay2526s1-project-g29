@@ -11,11 +11,23 @@ import {
   updateUserById as _updateUserById,
   updateUserPrivilegeById as _updateUserPrivilegeById,
 } from "../model/repository.js";
+import { isValidEmail, isValidPassword } from "../utils/validation.js";
 
 export async function createUser(req, res) {
   try {
     const { username, email, password } = req.body;
     if (username && email && password) {
+      if (!isValidEmail(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+
+      if (!isValidPassword(password)) {
+        return res.status(400).json({
+          message:
+            "Password must be at least 8 characters long and include upper and lower case letters and a number",
+        });
+      }
+
       const existingUser = await _findUserByUsernameOrEmail(username, email);
       if (existingUser) {
         return res.status(409).json({ message: "username or email already exists" });
@@ -78,6 +90,15 @@ export async function updateUser(req, res) {
       const user = await _findUserById(userId);
       if (!user) {
         return res.status(404).json({ message: `User ${userId} not found` });
+      }
+      if (email && !isValidEmail(email)) {
+        return res.status(400).json({ message: "Invalid email format" });
+      }
+      if (password && !isValidPassword(password)) {
+        return res.status(400).json({
+          message:
+            "Password must be at least 8 characters long and include upper and lower case letters and a number or special character",
+        });
       }
       if (username || email) {
         let existingUser = await _findUserByUsername(username);
