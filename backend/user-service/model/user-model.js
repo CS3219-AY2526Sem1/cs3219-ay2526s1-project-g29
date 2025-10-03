@@ -11,10 +11,6 @@ const UserModelSchema = new Schema({
   email: {
     type: String,
     required: true,
-  },
-  emailHash: {
-    type: String,
-    required: true,
     unique: true,
   },
   skillLevel: {

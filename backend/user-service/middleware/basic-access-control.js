@@ -33,6 +33,9 @@ export function verifyAccessToken(req, res, next) {
       username: dbUser.username,
       email: dbUser.email,
       isAdmin: dbUser.isAdmin,
+      skillLevel: dbUser.skillLevel,
+      questionsCompleted: dbUser.questionsCompleted,
+      createdAt: dbUser.createdAt,
     };
     next();
   });

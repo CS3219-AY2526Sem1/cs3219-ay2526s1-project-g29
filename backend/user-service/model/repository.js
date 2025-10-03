@@ -11,8 +11,20 @@ export async function connectToDB() {
   await connect(mongoDBUri);
 }
 
-export async function createUser(username, email, password) {
-  return new UserModel({ username, email, password }).save();
+export async function createUser({
+  username,
+  email,
+  password,
+  skillLevel = "low",
+  questionsCompleted = 0,
+}) {
+  return new UserModel({
+    username,
+    email,
+    password,
+    skillLevel,
+    questionsCompleted,
+  }).save();
 }
 
 export async function findUserByEmail(email) {
@@ -40,17 +52,37 @@ export async function findAllUsers() {
   return UserModel.find();
 }
 
-export async function updateUserById(userId, username, email, password) {
+export async function updateUserById(userId, updates) {
+  const updatePayload = {};
+
+  if (updates.username !== undefined) {
+    updatePayload.username = updates.username;
+  }
+
+  if (updates.email !== undefined) {
+    updatePayload.email = updates.email;
+  }
+
+  if (updates.password !== undefined) {
+    updatePayload.password = updates.password;
+  }
+
+  if (updates.skillLevel !== undefined) {
+    updatePayload.skillLevel = updates.skillLevel;
+  }
+
+  if (updates.questionsCompleted !== undefined) {
+    updatePayload.questionsCompleted = updates.questionsCompleted;
+  }
+
+  if (Object.keys(updatePayload).length === 0) {
+    return UserModel.findById(userId);
+  }
+
   return UserModel.findByIdAndUpdate(
     userId,
-    {
-      $set: {
-        username,
-        email,
-        password,
-      },
-    },
-    { new: true },  // return the updated user
+    { $set: updatePayload },
+    { new: true },
   );
 }
 
@@ -62,7 +94,7 @@ export async function updateUserPrivilegeById(userId, isAdmin) {
         isAdmin,
       },
     },
-    { new: true },  // return the updated user
+    { new: true },
   );
 }
 
