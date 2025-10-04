@@ -1,6 +1,6 @@
 // Signup page configuration
 export const config = {
-  apiUrl: "http://localhost:3001/users",
+  apiUrl: "http://localhost:8004/users",
   loginPath: "../loginscreen/login.html",
 
   // Validation rules

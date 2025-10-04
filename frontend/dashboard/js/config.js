@@ -5,7 +5,7 @@
 
 export const DASHBOARD_CONFIG = {
   API: {
-    BASE_URL: "http://localhost:3001",
+    BASE_URL: "http://localhost:8004",
   },
   ROUTES: {
     LOGIN: "../loginscreen/login.html",

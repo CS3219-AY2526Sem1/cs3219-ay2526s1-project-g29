@@ -7,6 +7,9 @@ WORKDIR /app
 # Add curl for healthcheck
 RUN apk add --no-cache curl
 
+# Default port env (overrideable from docker-compose/.env)
+ENV USER_PORT=3001
+
 # Copy package.json and package-lock.json
 COPY package*.json ./
 
@@ -16,12 +19,11 @@ RUN npm install
 # Copy all source files
 COPY . .
 
-# Expose port 3001 (the port your Express server uses)
-EXPOSE 3001
+EXPOSE ${USER_PORT}
 
 # Create a health endpoint check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:3001/health || exit 1
+  CMD curl -f http://localhost:${USER_PORT:-3001}/health || exit 1
 
 # Start the application
 CMD ["npm", "start"]
