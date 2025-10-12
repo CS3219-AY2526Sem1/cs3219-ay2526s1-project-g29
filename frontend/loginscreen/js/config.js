@@ -1,5 +1,5 @@
 export const config = {
-  apiUrl: "http://localhost:3001",
+  apiUrl: "http://localhost:8004",
   endpoints: {
     login: "/auth/login",
     verify: "/auth/verify-token",
