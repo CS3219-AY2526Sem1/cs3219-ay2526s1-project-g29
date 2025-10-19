@@ -78,6 +78,7 @@ export async function createUser(req, res) {
       password: hashedPassword,
       skillLevel: normalizedSkillLevel,
       questionsCompleted: normalizedQuestionsCompleted,
+      questionStats: { easy: 0, medium: 0, hard: 0 },
     });
     return res.status(201).json({
       message: `Created new user ${username} successfully`,
@@ -86,6 +87,27 @@ export async function createUser(req, res) {
   } catch (err) {
     console.error(err);
     return res.status(500).json({ message: "Unknown error when creating new user!" });
+  }
+}
+
+export async function getUserProfile(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Profile retrieved successfully",
+      data: formatUserResponse(user),
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Unknown error when getting profile!" });
   }
 }
 
@@ -274,5 +296,6 @@ export function formatUserResponse(user) {
     createdAt: user.createdAt,
     skillLevel: user.skillLevel,
     questionsCompleted: user.questionsCompleted,
+    questionStats: user.questionStats,
   };
 }

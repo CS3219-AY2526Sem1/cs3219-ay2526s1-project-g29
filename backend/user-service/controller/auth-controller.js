@@ -28,11 +28,11 @@ export async function handleLogin(req, res) {
       );
 
       res.cookie("accessToken", accessToken, {
-        httpOnly: true, // Cannot be accessed by JavaScript
-        secure: process.env.NODE_ENV === "production", // HTTPS only in production
-        sameSite: "strict", // CSRF protection
-        maxAge: 24 * 60 * 60 * 1000, // 24 hours in milliseconds
-        path: "/", // Available for entire domain
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "strict",
+        maxAge: 24 * 60 * 60 * 1000,
+        path: "/",
       });
 
       return res.status(200).json({
@@ -60,7 +60,6 @@ export async function handleVerifyToken(req, res) {
 
 export async function handleLogout(req, res) {
   try {
-    // Clear the HttpOnly cookie
     res.clearCookie("accessToken", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
