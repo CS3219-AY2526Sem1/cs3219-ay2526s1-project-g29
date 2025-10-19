@@ -17,6 +17,7 @@ export async function createUser({
   password,
   skillLevel = "low",
   questionsCompleted = 0,
+  questionStats = { easy: 0, medium: 0, hard: 0 },
 }) {
   return new UserModel({
     username,
@@ -24,6 +25,7 @@ export async function createUser({
     password,
     skillLevel,
     questionsCompleted,
+    questionStats,
   }).save();
 }
 
