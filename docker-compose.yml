@@ -40,6 +40,23 @@ services:
       mongodb:
         condition: service_healthy
 
+  rabbitmq:
+    image: rabbitmq:3.13-management-alpine
+    container_name: peerprep-rabbitmq
+    ports:
+      - "${RABBITMQ_PORT:-5672}:5672"
+      - "${RABBITMQ_MGMT_PORT:-15672}:15672"
+    environment:
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-admin}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS:-admin}
+    healthcheck:
+      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
   matching-service:
     build:
       context: ./backend/matching-service
@@ -48,6 +65,8 @@ services:
       - .env
     environment:
       - MATCHING_PORT=${MATCHING_PORT:-8002}
+      - RABBITMQ_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
+      - USER_SERVICE_URL=http://user-service:${USER_PORT:-8004}
     ports:
       - "${MATCHING_PORT:-8002}:${MATCHING_PORT:-8002}"
     healthcheck:
@@ -55,10 +74,13 @@ services:
       interval: 30s
       timeout: 3s
       retries: 3
-      start_period: 5s
+      start_period: 10s
     restart: unless-stopped
     depends_on:
-      - user-service
+      rabbitmq:
+        condition: service_healthy
+      user-service:
+        condition: service_healthy
 
   # MongoDB database
   mongodb:
@@ -78,3 +100,4 @@ services:
 
 volumes:
   mongodb_data:
+  rabbitmq_data:
