@@ -1,4 +1,5 @@
 import express from "express";
+import cors from "cors";
 import { createServer } from "http";
 import matchRoutes from "./routes/match-routes.js";
 import { attachWebsocket } from "./middleware/ws-server.js";
@@ -15,6 +16,25 @@ app.use((err, req, res, next) => {
   }
   next(err);
 });
+
+// Configure CORS
+app.use(
+  cors({
+    origin: ["http://localhost:3000", "http://127.0.0.1:3000"],
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: [
+      "Origin",
+      "X-Requested-With", 
+      "Content-Type",
+      "Accept",
+      "Authorization",
+    ],
+  })
+);
+
+// Handle preflight requests
+app.options("*", cors());
 
 // Healthcheck
 app.get("/health", (req, res) => {
