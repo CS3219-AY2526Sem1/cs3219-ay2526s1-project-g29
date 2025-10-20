@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerPrep - Dashboard</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+    <link rel="stylesheet" href="../shared/sharedStyles.css">
+    <link rel="stylesheet" href="dashboardScreenStyles.css">
+  </head>
+  <body>
+    <div class="header">
+      <div class="logo">PeerPrep</div>
+      <div class="user-info">
+        <span id="userGreeting">Welcome!</span>
+        <a href="../profileScreen/profileScreen.html" class="profile-btn">Profile</a>
+        <button class="logout-btn" id="logoutBtn">Logout</button>
+      </div>
+    </div>
+
+    <div class="dashboard-container">
+      <div class="welcome-card">
+        <h1 class="welcome-title">Welcome to PeerPrep Dashboard</h1>
+        <p class="welcome-description">You have successfully logged in!</p>
+      </div>
+
+      <div class="features-grid">
+        <a class="feature-card" href="../historyScreen/historyScreen.html">
+          <h3 class="feature-title">History</h3>
+          <p class="feature-description">Access past coding questions.</p>
+        </a>
+
+        <a class="feature-card" href="../matchScreen/matchScreen.html">
+          <h3 class="feature-title">Match</h3>
+          <p class="feature-description">
+            Find peers with similar skill levels for collaborative coding sessions.
+          </p>
+        </a>
+      </div>
+    </div>
+
+    <script type="module" src="functions/app.js"></script>
+  </body>
+</html>

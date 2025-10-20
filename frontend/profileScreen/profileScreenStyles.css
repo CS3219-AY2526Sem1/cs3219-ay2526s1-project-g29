@@ -1,0 +1,331 @@
+/* Header Navigation */
+.header {
+    background: #4c51bf;
+    padding: 1rem 2rem;
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+    min-height: 60px;
+}
+
+.nav-tabs {
+    display: flex;
+    gap: 2rem;
+    justify-self: start;
+}
+
+.nav-tab {
+    color: rgba(255, 255, 255, 0.7);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 0.5rem 0;
+    border-bottom: 2px solid transparent;
+    transition: all 0.3s ease;
+}
+
+.nav-tab:hover,
+.nav-tab.active {
+    color: white;
+    border-bottom-color: white;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    line-height: 1;
+    justify-self: center;
+}
+
+.user-menu {
+    position: relative;
+    justify-self: end;
+}
+
+.user-avatar {
+    width: 40px;
+    height: 40px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.3s ease;
+    flex-shrink: 0;
+}
+
+.user-avatar:hover {
+    background: rgba(255, 255, 255, 0.3);
+}
+
+.user-icon {
+    font-size: 20px;
+    color: white;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 1;
+}
+
+.dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: #4c51bf;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    min-width: 150px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    margin-top: 0.5rem;
+}
+
+.dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 0.75rem 1rem;
+    color: white;
+    text-decoration: none;
+    transition: background 0.3s ease;
+}
+
+.dropdown-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+
+/* Profile Container */
+.profile-container {
+    max-width: 1000px;
+    margin: 2rem auto;
+    padding: 0 2rem;
+}
+
+.profile-header {
+    text-align: left;
+    margin-bottom: 3rem;
+}
+
+.profile-title {
+    font-size: 2rem;
+    color: white;
+    font-weight: 500;
+}
+
+
+/* Stats Section */
+.stats-section {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 4rem;
+    margin-bottom: 4rem;
+    flex-wrap: wrap;
+}
+
+.progress-container {
+    position: relative;
+}
+
+.progress-chart {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.progress-ring {
+    transform: rotate(-90deg);
+}
+
+
+/* Progress circle */
+.progress-ring circle {
+    transition: stroke-dasharray 1s ease-in-out;
+    stroke-width: 12;
+    fill: transparent;
+    r: 90;
+    cx: 100;
+    cy: 100;
+}
+
+.progress-ring-background {
+    stroke: #333;
+}
+
+.progress-ring-easy {
+    stroke: #48bb78;
+    stroke-dasharray: 0 565.48;
+}
+
+.progress-ring-medium {
+    stroke: #f6e05e;
+    stroke-dasharray: 0 565.48;
+}
+
+.progress-ring-hard {
+    stroke: #f56565;
+    stroke-dasharray: 0 565.48;
+}
+
+.progress-text {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    text-align: center;
+    color: white;
+}
+
+.progress-number {
+    font-size: 3rem;
+    font-weight: bold;
+    line-height: 1;
+    }
+
+.progress-label {
+    font-size: 1rem;
+    opacity: 0.8;
+    line-height: 1.2;
+}
+
+.stats-legend {
+    display: flex;
+    flex-direction: column;
+    gap: 1rem;
+}
+
+.legend-item {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.legend-dot {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+}
+
+.legend-dot.easy {
+    background: #48bb78;
+}
+
+.legend-dot.medium {
+    background: #f6e05e;
+}
+
+.legend-dot.hard {
+    background: #f56565;
+}
+
+.legend-text {
+    color: white;
+    font-size: 1.1rem;
+    font-weight: 500;
+}
+
+
+/* Account Information */
+.profile-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    gap: 2rem;
+}
+
+.info-card {
+    background: rgba(76, 81, 191, 0.3);
+    border-radius: 12px;
+    padding: 2rem;
+}
+
+.info-card h3 {
+    color: white;
+    font-size: 1.3rem;
+    margin-bottom: 1.5rem;
+    font-weight: 600;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.info-item:last-child {
+    border-bottom: none;
+}
+
+.info-label {
+    color: rgba(255, 255, 255, 0.7);
+    font-weight: 500;
+}
+
+.info-value {
+    color: white;
+    font-weight: 600;
+}
+
+@media (max-width: 768px) {
+    .header {
+        display: flex;
+        flex-direction: column;
+        gap: 1rem;
+        padding: 1rem;
+        text-align: center;
+    }
+
+    .nav-tabs {
+        gap: 1rem;
+        justify-content: center;
+    }
+
+    .logo {
+        order: -1;
+    }
+
+    .user-menu {
+        justify-self: center;
+    }
+
+    .stats-section {
+        flex-direction: column;
+        gap: 2rem;
+    }
+
+    .profile-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .progress-chart svg {
+        width: 150px;
+        height: 150px;
+    }
+
+    .progress-number {
+        font-size: 2rem;
+    }
+
+    .profile-container {
+        padding: 0 1rem;
+    }
+}
