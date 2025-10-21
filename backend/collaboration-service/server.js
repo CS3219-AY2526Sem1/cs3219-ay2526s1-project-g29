@@ -2,16 +2,19 @@ import http from 'http';
 import { createRequire } from 'node:module';
 import { URL } from 'node:url';
 
-import jwt from 'jsonwebtoken';
 import { WebSocketServer } from 'ws';
 
 import { app } from './app.js';
 import { env } from './utils/env.js';
 import { redisClients } from './utils/redis.js';
 import { connectRabbitMQ, closeRabbitMQ } from './utils/rabbitmq.js';
-import { createSocketServer } from './middleware/socket-server.js';
-import { MessageBus, NoopMessageBus } from './services/message-bus.js';
-import { ensureDocument } from './services/document-service.js';
+import { createSocketServer } from './middleware/web_socket_server.js';
+import { MessageBus, NoopMessageBus } from './utils/message-bus.js';
+import { ensureDocument } from './controllers/editor-controller.js';
+import {
+  extractTokenFromCookie,
+  resolveUserFromToken,
+} from './middleware/auth.js';
 
 const require = createRequire(import.meta.url);
 const { setupWSConnection } = require('y-websocket/bin/utils');
@@ -137,9 +140,9 @@ server.on('upgrade', (request, socket, head) => {
     return;
   }
 
-  let userPayload;
+  let user;
   try {
-    userPayload = jwt.verify(token, env.jwtSecret);
+    user = resolveUserFromToken(token, env.jwtSecret);
   } catch (error) {
     unauthorized(socket);
     return;
@@ -148,10 +151,7 @@ server.on('upgrade', (request, socket, head) => {
   ensureDocument(sessionId, activeMessageBus);
 
   request.sessionId = sessionId;
-  request.user = {
-    id: userPayload.id,
-    username: userPayload.username ?? userPayload.email ?? 'anonymous',
-  };
+  request.user = user;
   request.url = `/${sessionId}`;
 
   editorWsServer.handleUpgrade(request, socket, head, (ws) => {
@@ -164,14 +164,3 @@ server.on('upgrade', (request, socket, head) => {
 editorWsServer.on('connection', (ws, request) => {
   setupWSConnection(ws, request, { docName: request.sessionId });
 });
-
-function extractTokenFromCookie(cookieHeader = '') {
-  return cookieHeader
-    ?.split(';')
-    .map((cookie) => cookie.trim())
-    .filter(Boolean)
-    .map((cookie) => cookie.split('='))
-    .filter(([name]) => name === 'accessToken')
-    .map(([, value]) => value)
-    .shift() ?? null;
-}

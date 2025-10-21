@@ -6,7 +6,7 @@
   "scripts": {
     "start": "npx http-server . -p 3000 -c-1",
     "dev": "npm run build:collab && npx http-server . -p 3000 -c-1 -o",
-    "build:collab": "npx esbuild collaborationScreen/js/main.js --bundle --format=esm --sourcemap --outfile=collaborationScreen/dist/main.bundle.js",
+    "build:collab": "npx esbuild collaborationScreen/functions/main.js --bundle --format=esm --sourcemap --outfile=collaborationScreen/dist/main.bundle.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
