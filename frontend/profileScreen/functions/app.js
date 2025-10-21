@@ -2,6 +2,7 @@ import { checkSession, getUserProfile, logout } from "./auth.js";
 import { config } from "./config.js";
 import { elements } from "./elements.js";
 import { updateProgressChart } from "./progress-chart.js";
+import { ProfileEditManager } from "./profile-edit.js";
 
 function navigateTo(url) {
     window.location.href = url;
@@ -60,6 +61,7 @@ async function initialiseProfile() {
         }
 
         setupDropdownMenu();
+        ProfileEditManager.initialize();
 
         const profileData = await getUserProfile();
         if (!profileData) {
@@ -67,6 +69,8 @@ async function initialiseProfile() {
             return;
         }
 
+        localStorage.setItem("user", JSON.stringify(profileData));
+        
         // Test with mock data first
         const mockQuestionStats = { easy: 0, medium: 5, hard: 2 };
         updateProgressChart(mockQuestionStats);
