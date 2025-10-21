@@ -1,5 +1,5 @@
 export const config = {
-    apiUrl: "http://localhost:8004", // Backend URL - Change if needed
+    apiUrl: "http://localhost:3001", // Backend URL - Change if needed
     endpoints: {
         login: "/auth/login",
         verify: "/auth/verify-token",
