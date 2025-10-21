@@ -1,5 +1,5 @@
 export const config = {
-    apiUrl: "http://localhost:3001",
+    apiUrl: "http://localhost:3001", // Backend URL - Change if needed
     endpoints: {
         signup: "/users",
     },

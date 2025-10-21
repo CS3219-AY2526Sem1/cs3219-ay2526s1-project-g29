@@ -92,7 +92,12 @@
       <!-- Account Information -->
       <div class="profile-info">
         <div class="info-card">
-          <h3>Account Information</h3>
+          <div class="info-card-header">
+            <h3>Account Information</h3>
+            <button class="edit-profile-btn" id="editProfileBtn">
+                Edit
+              </button>
+          </div>
           <div class="info-item">
             <span class="info-label">Username:</span>
             <span class="info-value" id="username">-</span>
@@ -105,6 +110,78 @@
             <span class="info-label">Member since:</span>
             <span class="info-value" id="memberSince">-</span>
           </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Edit Profile</h2>
+          <button class="close-btn" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="success-message" id="successMessage">
+            Profile updated successfully!
+          </div>
+
+          <form id="editProfileForm">
+            <div class="form-group">
+              <label for="editUsername">Username</label>
+              <input
+                type="text"
+                id="editUsername"
+                name="username"
+                placeholder="Enter new username"
+              />
+              <small>Leave blank to keep current username</small>
+              <div class="error-message" id="usernameError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="editEmail">Email</label>
+              <input
+                type="email"
+                id="editEmail"
+                name="email"
+                placeholder="Enter new email"
+              />
+              <small>Leave blank to keep current email</small>
+              <div class="error-message" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="editPassword">New Password</label>
+              <input
+                type="password"
+                id="editPassword"
+                name="password"
+                placeholder="Enter new password"
+              />
+              <small>Leave blank to keep current password. Must be at least 8 characters.</small>
+              <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <!-- Not sure if skill level is adjustable? -->
+            <!-- <div class="form-group">
+              <label for="editSkillLevel">Skill Level</label>
+              <select id="editSkillLevel" name="skillLevel">
+                <option value="">Keep current</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </div> -->
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveBtn">
+            Save Changes
+            <span class="loading" id="loadingSpinner">
+              <span class="spinner"></span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
