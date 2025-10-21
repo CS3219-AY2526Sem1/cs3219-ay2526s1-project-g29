@@ -11,6 +11,9 @@ RUN npm install
 # Copy all frontend files
 COPY . .
 
+# Build static assets (including collaboration bundle)
+RUN npm run build:collab
+
 # Expose port 3000
 EXPOSE 3000
 
