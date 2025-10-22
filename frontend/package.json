@@ -20,10 +20,5 @@
     "esbuild": "^0.25.11",
     "http-server": "^14.1.1"
   },
-  "dependencies": {
-    "socket.io-client": "^4.7.5",
-    "y-monaco": "^0.1.6",
-    "y-websocket": "^1.5.0",
-    "yjs": "^13.6.15"
-  }
+  "dependencies": {}
 }

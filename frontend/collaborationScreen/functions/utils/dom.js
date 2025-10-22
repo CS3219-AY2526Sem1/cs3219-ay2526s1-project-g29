@@ -35,12 +35,8 @@ export function renderParticipants(refs, participants = []) {
 
   participants.forEach((participant) => {
     const item = document.createElement("li");
-    const displayName = participant.username || participant.email || `User ${participant.id.slice(0, 6)}`;
-    const identifier = participant.id.slice(0, 8);
-    item.innerHTML = `
-      <span>${displayName}</span>
-      <small>${identifier}</small>
-    `;
+    const displayName = participant.username || participant.email || "anonymous";
+    item.textContent = displayName;
     refs.participantsList.appendChild(item);
   });
 }

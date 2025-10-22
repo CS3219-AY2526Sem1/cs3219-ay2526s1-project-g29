@@ -33,6 +33,14 @@ export async function initializeCollaborationScreen() {
   refs.disconnectButton.addEventListener("click", () => {
     handleDisconnect(refs, { manual: true });
   });
+
+  // Auto-connect if sessionId provided in query string
+  const params = new URLSearchParams(window.location.search);
+  const sid = params.get("sessionId");
+  if (sid) {
+    refs.sessionInput.value = sid;
+    await handleConnect(refs);
+  }
 }
 
 async function handleConnect(refs) {
@@ -60,24 +68,37 @@ async function handleConnect(refs) {
   try {
     socket = createSessionSocket({
       sessionId,
-      user,
       onReady: (payload) => {
-        state.realtime = createRealtimeSession({
-          sessionId: payload.sessionId,
-          user,
-          editorContext: state.editor,
-        });
-
-        state.realtime.connect();
-
         state.sessionId = payload.sessionId;
         updateStatus(refs, `Connected to session ${payload.sessionId}`, "success");
         renderParticipants(refs, payload.participants ?? []);
+
+        state.realtime = createRealtimeSession({
+          sessionId: payload.sessionId,
+          editorContext: state.editor,
+          socket,
+        });
+
+        // Send initial full content to sync
+        try { state.realtime.sendFull(); } catch {}
 
         state.editor?.instance?.layout?.();
       },
       onParticipants: (participants) => {
         renderParticipants(refs, participants);
+        if (Array.isArray(participants)) {
+          if (participants.length >= 2) {
+            updateStatus(refs, "Paired: both collaborators connected", "success");
+          } else if (participants.length === 1) {
+            updateStatus(refs, "Waiting for collaborator...", "info");
+          }
+        }
+      },
+      onCursorEvent: (evt) => {
+        state.realtime?.onRemoteCursor?.(evt);
+      },
+      onEditorEvent: (evt) => {
+        state.realtime?.onRemoteEvent?.(evt);
       },
       onError: (message) => {
         updateStatus(refs, message, "error");
@@ -99,7 +120,7 @@ async function handleConnect(refs) {
   socket.connect();
 }
 
-function handleDisconnect(refs, { manual }) {
+async function handleDisconnect(refs, { manual }) {
   if (!state.socket) {
     setConnectionState(refs, { connected: false });
     return;
@@ -107,7 +128,10 @@ function handleDisconnect(refs, { manual }) {
 
   try {
     if (state.sessionId) {
-      state.socket.emit("session:leave", { sessionId: state.sessionId });
+      await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/leave`, {
+        method: "POST",
+        credentials: "include",
+      }).catch(() => {});
     }
     state.socket.disconnect();
   } catch (error) {
@@ -116,7 +140,6 @@ function handleDisconnect(refs, { manual }) {
 
   if (state.realtime) {
     try {
-      state.realtime.disconnect();
       state.realtime.destroy();
     } catch (error) {
       console.error("Error tearing down realtime session", error);
@@ -130,9 +153,5 @@ function handleDisconnect(refs, { manual }) {
   setConnectionState(refs, { connected: false });
   renderParticipants(refs, []);
 
-  updateStatus(
-    refs,
-    manual ? "Disconnected" : "Connection closed",
-    manual ? "info" : "warning"
-  );
+  updateStatus(refs, manual ? "Disconnected" : "Connection closed", manual ? "info" : "warning");
 }

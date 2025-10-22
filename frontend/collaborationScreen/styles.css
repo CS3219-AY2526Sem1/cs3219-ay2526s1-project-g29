@@ -176,6 +176,12 @@
   overflow: hidden;
 }
 
+/* Remote collaborator selection highlight */
+.remote-selection {
+  background-color: rgba(255, 215, 0, 0.15);
+  border: 1px dashed rgba(255, 215, 0, 0.5);
+}
+
 
 .editor-container {
   flex: 1;

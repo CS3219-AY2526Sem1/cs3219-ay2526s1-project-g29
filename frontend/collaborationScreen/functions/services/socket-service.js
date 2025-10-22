@@ -1,39 +1,87 @@
-import { io } from "socket.io-client";
 import { COLLAB_CONFIG } from "../config.js";
 
-export function createSessionSocket({ sessionId, user, onReady, onParticipants, onError, onDisconnect }) {
-  const socket = io(COLLAB_CONFIG.httpBase, {
-    withCredentials: true,
-    autoConnect: false,
-  });
+export function createSessionSocket({ sessionId, onReady, onParticipants, onEditorEvent, onCursorEvent, onError, onDisconnect }) {
+  const url = `${COLLAB_CONFIG.wsBase}/${encodeURIComponent(sessionId)}`;
+  let ws;
 
-  socket.on("connect", () => {
-    socket.emit("session:join", { sessionId, username: user?.username });
-  });
+  function connect() {
+    try {
+      ws = new WebSocket(url);
+    } catch (err) {
+      onError?.(err?.message ?? "Failed to open WebSocket");
+      return;
+    }
 
-  socket.on("session:ready", (payload) => {
-    onReady?.(payload);
-  });
+    ws.onopen = () => {
+      // No-op; backend sends a 'ready' event with participants
+    };
 
-  socket.on("session:participants", (payload) => {
-    onParticipants?.(payload.participants ?? []);
-  });
+    ws.onmessage = (event) => {
+      let data;
+      try {
+        data = JSON.parse(event.data);
+      } catch (_) {
+        return; // ignore non-JSON messages
+      }
 
-  socket.on("session:error", (payload) => {
-    onError?.(payload?.message ?? "Unknown error");
-  });
+      switch (data.type) {
+        case "ready":
+          onReady?.({ sessionId: data.sessionId, participants: data.participants ?? [] });
+          break;
+        case "participants":
+          onParticipants?.(data.participants ?? []);
+          break;
+        case "presence":
+          // Presence events are informational; consumer may ignore
+          break;
+        case "message": {
+          // payload may contain nested JSON like { type: 'editor-update', ... }
+          let inner;
+          try {
+            inner = JSON.parse(data.payload);
+          } catch (_) {
+            inner = null;
+          }
+          if (inner) {
+            if (inner.type === "editor-update") {
+              onEditorEvent?.(inner);
+            } else if (inner.type === "cursor") {
+              onCursorEvent?.({ ...inner, from: data.from });
+            }
+          }
+          break;
+        }
+        default:
+          break;
+      }
+    };
 
-  socket.io.on("error", (err) => {
-    onError?.(err?.message ?? "Connection error");
-  });
+    ws.onerror = (event) => {
+      const msg = event?.message || "WebSocket error";
+      onError?.(msg);
+    };
 
-  socket.on("connect_error", (err) => {
-    onError?.(err?.message ?? "Connection error");
-  });
+    ws.onclose = (event) => {
+      onDisconnect?.(event?.reason || "closed");
+    };
+  }
 
-  socket.on("disconnect", (reason) => {
-    onDisconnect?.(reason);
-  });
+  function disconnect() {
+    try { ws?.close(1000, "client disconnect"); } catch {}
+    ws = null;
+  }
 
-  return socket;
+  function send(obj) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
+      const payload = typeof obj === "string" ? obj : JSON.stringify(obj);
+      // Backend wraps arbitrary message in { type:'message', payload }
+      ws.send(payload);
+    }
+  }
+
+  return {
+    connect,
+    disconnect,
+    send,
+  };
 }

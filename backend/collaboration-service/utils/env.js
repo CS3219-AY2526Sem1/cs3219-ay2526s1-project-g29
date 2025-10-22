@@ -1,6 +1,6 @@
 import 'dotenv/config';
 
-const DEFAULT_PORT = 4002;
+const DEFAULT_PORT = 8001;
 const DEFAULT_CORS_ORIGINS = [
   'http://localhost:3000',
   'http://127.0.0.1:3000',
@@ -39,9 +39,11 @@ function parseRabbitMQOptions() {
 
 export const env = {
   nodeEnv: process.env.NODE_ENV ?? 'development',
-  port: Number(process.env.PORT ?? DEFAULT_PORT),
+  // Support COLLAB_PORT first (to match compose), then PORT, then default
+  port: Number(process.env.COLLAB_PORT ?? process.env.PORT ?? DEFAULT_PORT),
   corsOrigins: parseCorsOrigins(),
   jwtSecret: process.env.JWT_SECRET ?? 'development-secret',
   redis: parseRedisOptions(),
   rabbitmq: parseRabbitMQOptions(),
+  internalApiToken: process.env.COLLAB_INTERNAL_TOKEN ?? 'dev-internal-token',
 };

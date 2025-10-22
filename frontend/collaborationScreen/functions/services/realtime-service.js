@@ -1,70 +1,144 @@
-import * as Y from "yjs";
-import { WebsocketProvider } from "y-websocket";
-import { MonacoBinding } from "y-monaco";
+// Minimal realtime adapter using our plain WebSocket backend.
+// Strategy: broadcast full text updates, throttled. Avoid feedback loops with a guard flag.
 
-import { COLLAB_CONFIG } from "../config.js";
+export function createRealtimeSession({ sessionId, editorContext, socket }) {
+  const { instance, model } = editorContext;
 
-export function createRealtimeSession({ sessionId, user, editorContext }) {
-  const doc = new Y.Doc();
-  const text = doc.getText("code");
+  let version = 0;
+  let isApplyingRemote = false;
+  let lastSentContent = model.getValue();
+  const remoteDecorations = new Map(); // userId -> decorationIds
 
-  const provider = new WebsocketProvider(
-    COLLAB_CONFIG.wsBase,
-    sessionId,
-    doc,
-    {
-      connect: false,
+  function sendUpdate() {
+    const content = model.getValue();
+    if (content === lastSentContent) return;
+    lastSentContent = content;
+    version += 1;
+    socket.send({ type: "editor-update", sessionId, version, content });
+  }
+
+  // Throttle sends to avoid spamming
+  let scheduled = null;
+  function scheduleSend() {
+    if (scheduled) return;
+    scheduled = setTimeout(() => {
+      scheduled = null;
+      sendUpdate();
+    }, 120);
+  }
+
+  const disposeContentListener = model.onDidChangeContent(() => {
+    if (isApplyingRemote) return;
+    scheduleSend();
+  });
+
+  // Send cursor/selection presence updates (throttled)
+  let cursorScheduled = null;
+  const sendCursor = () => {
+    const sel = instance.getSelection();
+    const selection = sel
+      ? {
+          startLineNumber: sel.startLineNumber,
+          startColumn: sel.startColumn,
+          endLineNumber: sel.endLineNumber,
+          endColumn: sel.endColumn,
+        }
+      : null;
+    socket.send({ type: 'cursor', selection });
+  };
+  const scheduleCursor = () => {
+    if (cursorScheduled) return;
+    cursorScheduled = setTimeout(() => {
+      cursorScheduled = null;
+      sendCursor();
+    }, 150);
+  };
+  const disposeCursorListener = instance.onDidChangeCursorSelection(() => {
+    scheduleCursor();
+  });
+
+  function applyRemoteUpdate({ content }) {
+    if (typeof content !== "string") return;
+    if (content === model.getValue()) return;
+    isApplyingRemote = true;
+    try {
+      const fullRange = model.getFullModelRange();
+      instance.executeEdits("remote", [
+        { range: fullRange, text: content, forceMoveMarkers: true },
+      ]);
+      instance.pushUndoStop();
+    } finally {
+      isApplyingRemote = false;
+      lastSentContent = model.getValue();
     }
-  );
+  }
 
-  provider.awareness.setLocalStateField("user", {
-    id: user.id,
-    username: user.username,
-  });
+  function setRemoteSelection(userId, selection) {
+    // Remove previous decorations
+    const prev = remoteDecorations.get(userId) || [];
+    try { model.deltaDecorations(prev, []); } catch {}
 
-  const binding = new MonacoBinding(
-    text,
-    editorContext.model,
-    new Set([editorContext.instance]),
-    provider.awareness
-  );
+    if (!selection) {
+      remoteDecorations.set(userId, []);
+      return;
+    }
 
-  editorContext.instance.focus();
-  editorContext.instance.setPosition({ lineNumber: 1, column: 1 });
-
-  const statusHandlers = new Set();
-  const awarenessHandlers = new Set();
-
-  provider.on("status", (event) => {
-    statusHandlers.forEach((handler) => handler(event));
-  });
-
-  provider.awareness.on("update", () => {
-    const states = Array.from(provider.awareness.getStates().values());
-    awarenessHandlers.forEach((handler) => handler(states));
-  });
+    const {
+      startLineNumber,
+      startColumn,
+      endLineNumber,
+      endColumn,
+    } = selection;
+    const newDecos = model.deltaDecorations([], [
+      {
+        range: {
+          startLineNumber,
+          startColumn,
+          endLineNumber,
+          endColumn,
+        },
+        options: {
+          className: 'remote-selection',
+          stickiness: 1,
+          isWholeLine: false,
+        },
+      },
+    ]);
+    remoteDecorations.set(userId, newDecos);
+  }
 
   return {
     connect() {
-      provider.connect();
+      // No-op: socket is already connected by caller
     },
     disconnect() {
-      provider.disconnect();
+      // No-op
     },
     destroy() {
-      if (typeof binding.destroy === "function") {
-        binding.destroy();
+      try { disposeContentListener.dispose?.(); } catch {}
+      try { disposeCursorListener.dispose?.(); } catch {}
+      // Clear all remote decorations
+      for (const ids of remoteDecorations.values()) {
+        try { model.deltaDecorations(ids, []); } catch {}
       }
-      provider.destroy();
-      doc.destroy();
+      remoteDecorations.clear();
     },
-    onStatus(handler) {
-      statusHandlers.add(handler);
-      return () => statusHandlers.delete(handler);
+    sendFull() {
+      // Force send the entire content immediately
+      lastSentContent = null;
+      sendUpdate();
     },
-    onAwarenessUpdate(handler) {
-      awarenessHandlers.add(handler);
-      return () => awarenessHandlers.delete(handler);
+    onRemoteEvent(msg) {
+      if (msg?.type === "editor-update") {
+        applyRemoteUpdate(msg);
+      }
+    },
+    onRemoteCursor(msg) {
+      // msg: { type:'cursor', selection?: {...}, from?: userId }
+      const userId = msg.from;
+      const selection = msg.selection;
+      if (!userId) return;
+      setRemoteSelection(userId, selection);
     },
   };
 }

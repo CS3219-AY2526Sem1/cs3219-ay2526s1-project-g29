@@ -1,7 +1,10 @@
 export const COLLAB_CONFIG = {
-  httpBase: "http://localhost:4002",
-  wsBase: "ws://localhost:4002/code-sync",
-  apiBase: "http://localhost:3001",
+  // Collaboration service
+  httpBase: "http://localhost:8001",
+  wsBase: "ws://localhost:8001/collab",
+  // User service (for auth/session verification)
+  apiBase: "http://localhost:8004",
   defaultLanguage: "javascript",
-  defaultContent: `// Welcome to PeerPrep Collaboration\n// Share this session ID with your partner to start coding together!` ,
+  defaultContent:
+    `// Welcome to PeerPrep Collaboration\n// Your session will sync across both participants.`,
 };

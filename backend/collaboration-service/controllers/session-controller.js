@@ -1,135 +1,63 @@
-const SESSION_KEY_PREFIX = 'collab:session:';
+import { env } from '../utils/env.js';
+import { createSessionWithId, getSession, removeParticipant, closeSession } from '../services/session-store.js';
+import { toPublicSession } from '../models/session-model.js';
+import { disconnectUserFromSession } from '../middleware/ws-server.js';
 
-const TTL_SECONDS = 60 * 60; // 1 hour
-
-const noop = () => {};
-
-export class RedisSessionStore {
-  constructor(redisClient) {
-    this.redis = redisClient;
-  }
-
-  async addParticipant(sessionId, user) {
-    const key = sessionKey(sessionId);
-    await this.redis.hset(key, user.id, JSON.stringify(user));
-    await this.redis.expire(key, TTL_SECONDS);
-    return this.getParticipants(sessionId);
-  }
-
-  async removeParticipant(sessionId, userId) {
-    const key = sessionKey(sessionId);
-    await this.redis.hdel(key, userId);
-    const remaining = await this.redis.hlen(key);
-    if (remaining === 0) {
-      await this.redis.del(key);
-      return [];
-    }
-    return this.getParticipants(sessionId);
-  }
-
-  async getParticipants(sessionId) {
-    const key = sessionKey(sessionId);
-    const participants = await this.redis.hgetall(key);
-    return Object.values(participants)
-      .map(jsonSafeParse)
-      .filter(Boolean);
-  }
+function checkInternalAuth(req) {
+  const token = req.headers['x-internal-token'] || req.headers['X-Internal-Token'];
+  return token && token === env.internalApiToken;
 }
 
-export class InMemorySessionStore {
-  constructor() {
-    this.sessions = new Map();
+export function matchFoundHandler(req, res) {
+  if (!checkInternalAuth(req)) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  async addParticipant(sessionId, user) {
-    const participants = this.sessions.get(sessionId) ?? new Map();
-    participants.set(user.id, user);
-    this.sessions.set(sessionId, participants);
-    return this.getParticipants(sessionId);
+  const { sessionId, users, id: legacyId, participants: legacyParticipants } = req.body || {};
+  const id = sessionId ?? legacyId;
+  const participants = users ?? legacyParticipants;
+
+  if (!id || typeof id !== 'string' || !id.trim()) {
+    return res.status(400).json({ message: 'id is required' });
   }
 
-  async removeParticipant(sessionId, userId) {
-    const participants = this.sessions.get(sessionId);
-    if (!participants) {
-      return [];
-    }
-
-    participants.delete(userId);
-    if (participants.size === 0) {
-      this.sessions.delete(sessionId);
-      return [];
-    }
-
-    return this.getParticipants(sessionId);
+  const result = createSessionWithId(id, participants);
+  if (result.error === 'exists') {
+    return res.status(200).json({ session: toPublicSession(result.session), created: false });
   }
 
-  async getParticipants(sessionId) {
-    return Array.from((this.sessions.get(sessionId) ?? new Map()).values());
-  }
+  return res.status(201).json({ session: toPublicSession(result.session), created: true });
 }
 
-export function createSessionManager({
-  store,
-  messageBus,
-  onEmpty = noop,
-}) {
-  const bus = messageBus ?? { publish: noop };
-
-  async function publishParticipants(sessionId, participants) {
-    await safePublish(bus, 'session.participants', {
-      sessionId,
-      participants,
-      timestamp: new Date().toISOString(),
-    });
-
-    if (participants.length === 0) {
-      onEmpty(sessionId);
-    }
+export function getSessionHandler(req, res) {
+  if (!checkInternalAuth(req)) {
+    return res.status(401).json({ message: 'Unauthorized' });
   }
-
-  return {
-    async join(sessionId, user) {
-      const participants = await store.addParticipant(sessionId, user);
-      await safePublish(bus, 'session.joined', {
-        sessionId,
-        user,
-        participantsCount: participants.length,
-        timestamp: new Date().toISOString(),
-      });
-      await publishParticipants(sessionId, participants);
-      return participants;
-    },
-
-    async leave(sessionId, user) {
-      const participants = await store.removeParticipant(sessionId, user.id);
-      await safePublish(bus, 'session.left', {
-        sessionId,
-        user,
-        participantsCount: participants.length,
-        timestamp: new Date().toISOString(),
-      });
-      await publishParticipants(sessionId, participants);
-      return participants;
-    },
-  };
+  const { id } = req.params;
+  const s = getSession(id);
+  if (!s) return res.status(404).json({ message: 'session not found' });
+  return res.status(200).json({ session: toPublicSession(s) });
 }
 
-function sessionKey(sessionId) {
-  return `${SESSION_KEY_PREFIX}${sessionId}`;
-}
+// Authenticated user proactively leaves a session
+export function leaveSessionHandler(req, res) {
+  const { id } = req.params; // session id
+  const user = req.user; // set by requireAuth middleware
 
-function jsonSafeParse(value) {
-  try {
-    return JSON.parse(value);
-  } catch {
-    return null;
-  }
-}
+  const s = getSession(id);
+  if (!s) return res.status(404).json({ message: 'session not found' });
 
-async function safePublish(bus, routingKey, payload) {
-  try {
-    await bus.publish(routingKey, payload);
-  } catch (error) {
-    console.error('[collaboration-service] failed to publish bus event', routingKey, error);
+  // Remove participant from store
+  removeParticipant(id, user.id);
+
+  // Disconnect any active sockets for this user in this session
+  disconnectUserFromSession(id, user.id);
+
+  const updated = getSession(id);
+  if (!updated || updated.participants.length === 0) {
+    closeSession(id);
+    return res.status(200).json({ message: 'left and session closed' });
   }
+
+  return res.status(200).json({ message: 'left', session: toPublicSession(updated) });
 }

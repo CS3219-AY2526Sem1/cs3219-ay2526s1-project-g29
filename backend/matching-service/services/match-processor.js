@@ -7,6 +7,7 @@ import {
   getCommonTopics
 } from "../models/match-model.js";
 import { notifyUser } from "../middleware/ws-server.js";
+import { notifyCollabMatch } from "../utils/collaboration.js";
 
 // In-memory pending matches organized by difficulty only
 // Key: difficulty (e.g., "easy", "medium", "hard")
@@ -105,6 +106,14 @@ async function processMatchRequest(request) {
     
     console.log(`Match found! Session: ${session.sessionId}, Common topics: ${bestCommonTopics.join(", ")}`);
     
+    // Pass info to collaboration-service
+    await notifyCollabMatch({
+      sessionId: session.sessionId,
+      users: [userId, partner.userId],
+      matchedTopics: bestCommonTopics,
+      difficulty,
+    });
+
     // Notify both users
     notifyUser(userId, {
       type: "MATCHED",
