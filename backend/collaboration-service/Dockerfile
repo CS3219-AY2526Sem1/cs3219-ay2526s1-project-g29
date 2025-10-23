@@ -1,20 +1,23 @@
-FROM python:3.12-alpine
+FROM node:18-alpine
+
 WORKDIR /app
 
-# Tools for healthcheck
+# Add curl for healthcheck
 RUN apk add --no-cache curl
 
-# Tiny Flask app with / and /health
-RUN pip install --no-cache-dir flask
-RUN printf '%s\n' \
-"from flask import Flask" \
-"app = Flask(__name__)" \
-"@app.get('/')" \
-"def root(): return 'service OK'" \
-"@app.get('/health')" \
-"def health(): return 'ok'" \
-"if __name__ == '__main__': app.run(host='0.0.0.0', port=8080)" \
-> app.py
+# Default port env (overrideable from docker-compose/.env)
+ENV COLLAB_PORT=8001
 
-EXPOSE 8080
-CMD [ "python", "app.py" ]
+# Copy package files and install
+COPY package*.json ./
+RUN npm install --production
+
+# Copy source
+COPY . .
+
+EXPOSE ${COLLAB_PORT}
+
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
+  CMD /bin/sh -c 'curl -f http://localhost:${COLLAB_PORT:-8001}/health || exit 1'
+
+CMD ["npm", "start"]

@@ -157,10 +157,11 @@ function handleMatchSuccess(data) {
         difficulty: data.difficulty,
     }));
     
-    // Redirect to collaboration screen
+    // Redirect to collaboration screen with sessionId
     setTimeout(() => {
-        navigateTo(config.routes.dashboard); // TODO: Change to collaboration screen
-    }, 2000);
+        const url = `${config.routes.collaboration}?sessionId=${encodeURIComponent(data.sessionId)}`;
+        navigateTo(url);
+    }, 1500);
 }
 
 // Match Timeout Handler

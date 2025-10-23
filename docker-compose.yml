@@ -14,24 +14,26 @@ services:
     depends_on:
       user-service:
         condition: service_healthy
+      collaboration-service:
+        condition: service_healthy
 
   # User service (the only backend service you're currently using)
   user-service:
     build:
       context: ./backend/user-service
     ports:
-      - "${USER_PORT:-3001}:${USER_PORT:-3001}"
+      - "${USER_PORT:-8004}:${USER_PORT:-8004}"
     environment:
       - NODE_ENV=development
       - ENV=DEV
-      - USER_PORT=${USER_PORT:-3001}
+      - USER_PORT=${USER_PORT:-8004}
       - DB_LOCAL_URI=mongodb://mongodb:27017/peerprep
       - JWT_SECRET=${JWT_SECRET:-your-secret-key}
     healthcheck:
       test:
         [
           "CMD-SHELL",
-          "curl -fsS http://localhost:${USER_PORT:-3001}/health > /dev/null || exit 1",
+          "curl -fsS http://localhost:${USER_PORT:-8004}/health > /dev/null || exit 1",
         ]
       interval: 10s
       timeout: 2s
@@ -68,6 +70,8 @@ services:
       - RABBITMQ_URL=amqp://${RABBITMQ_USER:-admin}:${RABBITMQ_PASS:-admin}@rabbitmq:5672
       - USER_SERVICE_URL=http://user-service:${USER_PORT:-8004}
       - MATCHING_TIMEOUT=${MATCHING_TIMEOUT:-30000}
+      - COLLAB_SERVICE_URL=http://collaboration-service:${COLLAB_PORT:-8001}
+      - COLLAB_INTERNAL_TOKEN=${COLLAB_INTERNAL_TOKEN:-dev-internal-token}
     ports:
       - "${MATCHING_PORT:-8002}:${MATCHING_PORT:-8002}"
     healthcheck:
@@ -80,6 +84,29 @@ services:
     depends_on:
       rabbitmq:
         condition: service_healthy
+      user-service:
+        condition: service_healthy
+      collaboration-service:
+        condition: service_healthy
+
+  collaboration-service:
+    build:
+      context: ./backend/collaboration-service
+    ports:
+      - "${COLLAB_PORT:-8001}:${COLLAB_PORT:-8001}"
+    environment:
+      - NODE_ENV=development
+      - COLLAB_PORT=${COLLAB_PORT:-8001}
+      - JWT_SECRET=${JWT_SECRET:-your-secret-key}
+      - COLLAB_INTERNAL_TOKEN=${COLLAB_INTERNAL_TOKEN:-dev-internal-token}
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${COLLAB_PORT:-8001}/health || exit 1"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    depends_on:
       user-service:
         condition: service_healthy
 
