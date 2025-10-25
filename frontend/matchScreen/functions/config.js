@@ -2,7 +2,8 @@ export const config = {
     // API Configuration
     api: {
         matchingService: "http://localhost:8002",
-        userService: "http://localhost:3001",
+        userService: "http://localhost:8004",
+        questionService: "http://localhost:8003",
     },
     
     // Endpoints

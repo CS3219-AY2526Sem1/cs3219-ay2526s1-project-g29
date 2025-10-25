@@ -5,8 +5,10 @@ import { connect } from "mongoose";
 export async function connectToDB() {
   let mongoDBUri =
     process.env.ENV === "PROD"
-      ? process.env.DB_CLOUD_URI
-      : process.env.DB_LOCAL_URI;
+      ? process.env.USER_DB_CLOUD_URI || process.env.DB_CLOUD_URI
+      : process.env.USER_DB_LOCAL_URI || process.env.DB_LOCAL_URI;
+
+  console.log(`Connecting to User Service MongoDB...`);
 
   await connect(mongoDBUri);
 }
