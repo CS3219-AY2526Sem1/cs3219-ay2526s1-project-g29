@@ -1,6 +1,6 @@
 export const config = {
-    apiUrl: "http://localhost:3001",
-    apiBaseUrl: "http://localhost:3001",
+    apiUrl: "http://localhost:8004",
+    apiBaseUrl: "http://localhost:8004",
     endpoints: {
         verify: "/auth/verify-token",
         userProfile: "/users/profile",

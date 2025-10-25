@@ -4,7 +4,7 @@ const path = require('path');
 
 require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
 
-const MONGO_URI = process.env.DB_CLOUD_URI || 'mongodb://127.0.0.1:27017/peerprepQuestionServiceDB';
+const MONGO_URI = process.env.QUESTION_DB_CLOUD_URI || 'mongodb://127.0.0.1:27017/peerprepQuestionServiceDB';
 
 const sampleQuestions = [
     {

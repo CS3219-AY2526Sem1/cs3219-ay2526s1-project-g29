@@ -23,9 +23,9 @@ app.use((err, req, res, next) => {
 
 const getMongoURI = () => {
     if (process.env.ENV === 'PROD') {
-        return process.env.DB_CLOUD_URI;
+        return process.env.QUESTION_DB_CLOUD_URI;
     }
-    return process.env.DB_LOCAL_URI || 'mongodb://127.0.0.1:27017/peerprepQuestionServiceDB';
+    return process.env.QUESTION_DB_LOCAL_URI || 'mongodb://127.0.0.1:27017/peerprepQuestionServiceDB';
 };
 
 const mongoURI = getMongoURI();
