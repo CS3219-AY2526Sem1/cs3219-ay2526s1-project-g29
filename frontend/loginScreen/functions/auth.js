@@ -1,6 +1,6 @@
 import { config } from "./config.js";
 
-// Check if the user has an active valid session
+// Check if the user is authenticated
 export async function checkSession() {
     try {
         const response = await fetch(`${config.apiUrl}${config.endpoints.verify}`, {

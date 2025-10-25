@@ -20,7 +20,7 @@ app.use((err, req, res, next) => {
         error: process.env.ENV !== 'PROD' ? err.message : undefined
     });
 });
-n
+
 const getMongoURI = () => {
     if (process.env.ENV === 'PROD') {
         return process.env.DB_CLOUD_URI;

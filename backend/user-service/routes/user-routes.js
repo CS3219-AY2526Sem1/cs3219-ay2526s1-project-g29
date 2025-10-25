@@ -8,12 +8,16 @@ import {
   getUserProfile,
   updateUser,
   updateUserPrivilege,
+  addQuestionAttempted,
+  getQuestionsAttempted,
 } from "../controller/user-controller.js";
 import { verifyAccessToken, verifyIsAdmin, verifyIsOwnerOrAdmin } from "../middleware/basic-access-control.js";
 
 const router = express.Router();
 
 router.get("/profile", verifyAccessToken, getUserProfile);
+
+router.get("/questions-attempted", verifyAccessToken, getQuestionsAttempted);
 
 router.get("/", verifyAccessToken, verifyIsAdmin, getAllUsers);
 
@@ -24,6 +28,13 @@ router.post("/", createUser);
 router.get("/:id", verifyAccessToken, verifyIsOwnerOrAdmin, getUser);
 
 router.patch("/:id", verifyAccessToken, verifyIsOwnerOrAdmin, updateUser);
+
+router.post(
+  "/:id/questions-attempted",
+  verifyAccessToken,
+  verifyIsOwnerOrAdmin,
+  addQuestionAttempted
+);
 
 router.delete("/:id", verifyAccessToken, verifyIsOwnerOrAdmin, deleteUser);
 

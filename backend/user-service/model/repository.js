@@ -16,7 +16,7 @@ export async function createUser({
   email,
   password,
   skillLevel = "low",
-  questionsCompleted = 0,
+  questionsAttempted = [],
   questionStats = { easy: 0, medium: 0, hard: 0 },
 }) {
   return new UserModel({
@@ -24,7 +24,7 @@ export async function createUser({
     email,
     password,
     skillLevel,
-    questionsCompleted,
+    questionsAttempted,
     questionStats,
   }).save();
 }
@@ -73,8 +73,8 @@ export async function updateUserById(userId, updates) {
     updatePayload.skillLevel = updates.skillLevel;
   }
 
-  if (updates.questionsCompleted !== undefined) {
-    updatePayload.questionsCompleted = updates.questionsCompleted;
+  if (updates.questionsAttempted !== undefined) {
+    updatePayload.questionsAttempted = updates.questionsAttempted;
   }
 
   if (Object.keys(updatePayload).length === 0) {
