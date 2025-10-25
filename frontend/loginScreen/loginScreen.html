@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerPrep - Login</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+    <link rel="stylesheet" href="../shared/sharedStyles.css">
+    <link rel="stylesheet" href="loginScreenStyles.css">
+  </head>
+
+  <body>
+    <div class="login-container">
+      <div class="login-card">
+        <h1 class="logo">PeerPrep</h1>
+
+        <form id="loginForm" class="login-form">
+          <div class="form-group">
+            <input type="email" id="email" name="email" placeholder="Email" required>
+          </div>
+
+          <div class="form-group">
+            <input type="password" id="password" name="password" placeholder="Password" required>
+          </div>
+
+          <button type="submit" class="sign-in-btn">Sign In</button>
+        </form>
+
+        <div class="form-footer">
+          <button type="submit" class ="forgot-password" id="forgotPasswordLink">Forgot Password?</button>
+          <button type="submit" class ="sign-up-link" id="signUpLink">Sign Up</button>
+        </div>
+      </div>
+
+      <div id="loadingOverlay" class="loading-overlay" style="display: none">
+        <div class="spinner"></div>
+      </div>
+
+      <div id="messageContainer" class="message-container" style="display: none">
+        <div id="messageText" class="message-text"></div>
+      </div>
+    </div>
+
+    <script type="module" src="functions/app.js"></script>
+  </body>
+</html>
