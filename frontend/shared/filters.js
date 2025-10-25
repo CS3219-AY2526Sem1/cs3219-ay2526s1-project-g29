@@ -27,7 +27,20 @@ export const TOPICS = [
 
 export function getTopicLabel(value) {
     const topic = TOPICS.find((t) => t.value === value);
-    return topic ? topic.label : value;
+
+    if (topic) {
+        return topic.label;
+    }
+
+    if (typeof value === "string") {
+        return value
+            .split(/[-_\s]+/)
+            .filter(Boolean)
+            .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+            .join(" ");
+    }
+    
+    return value;
 }
 
 export function getDifficultyLabel(value) {

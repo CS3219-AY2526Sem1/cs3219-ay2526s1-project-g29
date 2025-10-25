@@ -17,6 +17,13 @@ export function renderHistoryItems(historyData) {
     elements.loadingState.classList.add("hidden");
     elements.emptyState.classList.add("hidden");
 
+    // Sort by most recent attempt first
+    historyData.sort((a, b) => {
+        const dateA = a.attemptedAt ? new Date(a.attemptedAt).getTime() : 0;
+        const dateB = b.attemptedAt ? new Date(b.attemptedAt).getTime() : 0;
+        return dateB - dateA;
+    });
+
     // Render each history item
     historyData.forEach((item) => {
         const historyItem = createHistoryItem(item);
@@ -142,7 +149,9 @@ function formatDate(dateString) {
     if (diffDays === 0) return "Today";
     if (diffDays === 1) return "Yesterday";
     if (diffDays < 7) return `${diffDays} days ago`;
+    if (diffDays < 14) return "1 week ago";
     if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+    if (diffDays < 60) return "1 month ago";
     if (diffDays < 365) return `${Math.floor(diffDays / 30)} months ago`;
 
     return date.toLocaleDateString();

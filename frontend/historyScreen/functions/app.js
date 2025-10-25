@@ -115,6 +115,8 @@ async function loadHistory() {
 
 function applyFilters() {
     const filteredHistory = filterHistory(historyData, currentFilters);
+    const dateVal = (d) => (d ? new Date(d).getTime() : 0);
+    filteredHistory.sort((a, b) => dateVal(b.attemptedAt) - dateVal(a.attemptedAt));
     renderHistoryItems(filteredHistory);
 }
 

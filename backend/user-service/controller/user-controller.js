@@ -18,7 +18,7 @@ import {
   isValidQuestionsAttempted,
 } from "../utils/validation.js";
 
-const QUESTION_SERVICE_URL = "http://localhost:3003";
+const QUESTION_SERVICE_URL = "http://localhost:8003";
 const QUESTIONS_ENDPOINT = "/api/questions";
 
 export async function createUser(req, res) {
