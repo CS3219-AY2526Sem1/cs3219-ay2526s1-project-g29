@@ -34,7 +34,7 @@ export function verifyAccessToken(req, res, next) {
       email: dbUser.email,
       isAdmin: dbUser.isAdmin,
       skillLevel: dbUser.skillLevel,
-      questionsCompleted: dbUser.questionsCompleted,
+      questionsAttempted: dbUser.questionsAttempted,
       questionStats: dbUser.questionStats,
       createdAt: dbUser.createdAt,
     };

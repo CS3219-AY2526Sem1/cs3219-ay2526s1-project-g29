@@ -17,21 +17,40 @@ export function isValidSkillLevel(level) {
   return SKILL_LEVELS.has(level.toLowerCase());
 }
 
-export function isValidQuestionsCompleted(value) {
+export function isValidQuestionsAttempted(value) {
+  // Format: [{ questionId: String, attemptedAt: Date, partner: String }]
   if (value === undefined || value === null) {
-    return false;
-  }
-
-  if (typeof value === "string") {
-    if (value.trim() === "") {
-      return false;
-    }
-    const parsed = Number(value);
-    if (!Number.isInteger(parsed) || parsed < 0) {
-      return false;
-    }
     return true;
   }
 
-  return Number.isInteger(value) && value >= 0;
+  if (!Array.isArray(value)) {
+    return false;
+  }
+
+  // Validate each item in the array
+  return value.every((item) => {
+    if (typeof item !== "object" || item === null) {
+      return false;
+    }
+
+    // questionId is required and must be a string
+    if (!item.questionId || typeof item.questionId !== "string") {
+      return false;
+    }
+
+    // attemptedAt should be a valid date if provided
+    if (item.attemptedAt !== undefined && item.attemptedAt !== null) {
+      const date = new Date(item.attemptedAt);
+      if (isNaN(date.getTime())) {
+        return false;
+      }
+    }
+
+    // partner should be a string
+    if (typeof item.partner !== "string") {
+      return false;
+    }
+
+    return true;
+  });
 }
