@@ -8,7 +8,7 @@ const ALLOWED_DIFFICULTIES = ['easy', 'medium', 'hard'];
  */
 async function createQuestion(req, res) {
     try {
-        const { title, description, difficulty, topics, tags = [], examples = [] } = req.body;
+        const { title, description, difficulty, topics } = req.body;
 
         // Validation
         if (!title || !description || !difficulty) {
@@ -34,8 +34,6 @@ async function createQuestion(req, res) {
             description,
             difficulty,
             topics: Array.isArray(topics) ? topics : [topics],
-            tags,
-            examples
         });
 
         return res.status(201).json({
@@ -122,7 +120,6 @@ async function getQuestions(req, res) {
         const {
             difficulty,
             topics,
-            tags,
             page = 1,
             limit = 20,
             sortBy = 'createdAt',
@@ -136,12 +133,10 @@ async function getQuestions(req, res) {
         }
 
         const topicsArray = topics ? topics.split(',').map(t => t.trim()) : [];
-        const tagsArray = tags ? tags.split(',').map(t => t.trim()) : [];
 
         const result = await QuestionRepository.findAll({}, {
             difficulty,
             topics: topicsArray,
-            tags: tagsArray,
             page: parseInt(page),
             limit: parseInt(limit),
             sortBy,
