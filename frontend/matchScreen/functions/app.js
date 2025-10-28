@@ -2,6 +2,7 @@ import { checkSession, getUserProfile } from "./auth.js";
 import { config } from "./config.js";
 import { setupDropdownMenu, setupFormListeners, setUserData } from "./eventHandlers.js";
 import { showMessage, updateFindMatchButton } from "./UIManager.js";
+import { elements } from "./elements.js";
 
 function navigateTo(url) {
     window.location.href = url;
@@ -10,7 +11,7 @@ function navigateTo(url) {
 async function initializeMatchScreen() {
     try {
         console.log("Initializing match screen...");
-        
+
         // Check user authentication
         const sessionData = await checkSession();
         if (!sessionData) {
@@ -18,7 +19,7 @@ async function initializeMatchScreen() {
             navigateTo(config.routes.login);
             return;
         }
-        
+
         // Get user profile data
         const profileData = await getUserProfile();
         if (!profileData) {
@@ -26,19 +27,21 @@ async function initializeMatchScreen() {
             setTimeout(() => navigateTo(config.routes.login), 2000);
             return;
         }
-        
+
         // Initialize application state
         setUserData(sessionData.data.id, profileData);
-        
+
         // Setup event listeners
         setupDropdownMenu();
         setupFormListeners();
-        
+
+        elements.initSelectAll();
+
         // Initialize UI state
         updateFindMatchButton();
-        
+
         console.log("Match screen initialized successfully");
-        
+
     } catch (error) {
         console.error("Error initializing match screen:", error);
         showMessage("An error occurred. Please try again.", "error");
