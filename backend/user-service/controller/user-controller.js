@@ -15,18 +15,16 @@ import {
   isValidEmail,
   isValidPassword,
   isValidSkillLevel,
-  isValidQuestionsCompleted,
+  isValidQuestionsAttempted,
 } from "../utils/validation.js";
+
+const QUESTION_SERVICE_URL = "http://localhost:8003";
+const QUESTIONS_ENDPOINT = "/api/questions";
 
 export async function createUser(req, res) {
   try {
-    const {
-      username,
-      email,
-      password,
-      skillLevel,
-      questionsCompleted,
-    } = req.body;
+    const { username, email, password, skillLevel, questionsAttempted } =
+      req.body;
 
     if (!(username && email && password)) {
       return res.status(400).json({
@@ -53,14 +51,15 @@ export async function createUser(req, res) {
       normalizedSkillLevel = skillLevel.toLowerCase();
     }
 
-    let normalizedQuestionsCompleted = 0;
-    if (questionsCompleted !== undefined) {
-      if (!isValidQuestionsCompleted(questionsCompleted)) {
+    let normalizedQuestionsAttempted = [];
+    if (questionsAttempted !== undefined && questionsAttempted !== null) {
+      if (!isValidQuestionsAttempted(questionsAttempted)) {
         return res.status(400).json({
-          message: "questionsCompleted must be a non-negative integer",
+          message:
+            "questionsAttempted must be an array of objects with questionId, attemptedAt, and partner fields",
         });
       }
-      normalizedQuestionsCompleted = Number(questionsCompleted);
+      normalizedQuestionsAttempted = questionsAttempted;
     }
 
     const existingUser = await _findUserByUsernameOrEmail(username, email);
@@ -77,7 +76,7 @@ export async function createUser(req, res) {
       email,
       password: hashedPassword,
       skillLevel: normalizedSkillLevel,
-      questionsCompleted: normalizedQuestionsCompleted,
+      questionsAttempted: normalizedQuestionsAttempted,
       questionStats: { easy: 0, medium: 0, hard: 0 },
     });
     return res.status(201).json({
@@ -143,25 +142,20 @@ export async function getAllUsers(req, res) {
 
 export async function updateUser(req, res) {
   try {
-    const {
-      username,
-      email,
-      password,
-      skillLevel,
-      questionsCompleted,
-    } = req.body;
+    const { username, email, password, skillLevel, questionsAttempted } =
+      req.body;
 
     const hasUpdates =
       username !== undefined ||
       email !== undefined ||
       password !== undefined ||
       skillLevel !== undefined ||
-      questionsCompleted !== undefined;
+      questionsAttempted !== undefined;
 
     if (!hasUpdates) {
       return res.status(400).json({
         message:
-          "No field to update: username, email, password, skillLevel and questionsCompleted are all missing!",
+          "No field to update: username, email, password, skillLevel and questionsAttempted are all missing!",
       });
     }
 
@@ -191,11 +185,12 @@ export async function updateUser(req, res) {
     }
 
     if (
-      questionsCompleted !== undefined &&
-      !isValidQuestionsCompleted(questionsCompleted)
+      questionsAttempted !== undefined &&
+      !isValidQuestionsAttempted(questionsAttempted)
     ) {
       return res.status(400).json({
-        message: "questionsCompleted must be a non-negative integer",
+        message:
+          "questionsAttempted must be an array of objects with questionId, attemptedAt, and partner fields",
       });
     }
 
@@ -224,10 +219,8 @@ export async function updateUser(req, res) {
       email,
       password: hashedPassword,
       skillLevel: skillLevel ? skillLevel.toLowerCase() : undefined,
-      questionsCompleted:
-        questionsCompleted !== undefined
-          ? Number(questionsCompleted)
-          : undefined,
+      questionsAttempted:
+        questionsAttempted !== undefined ? questionsAttempted : undefined,
     });
 
     return res.status(200).json({
@@ -295,7 +288,109 @@ export function formatUserResponse(user) {
     isAdmin: user.isAdmin,
     createdAt: user.createdAt,
     skillLevel: user.skillLevel,
-    questionsCompleted: user.questionsCompleted,
+    questionsAttempted: user.questionsAttempted,
     questionStats: user.questionStats,
   };
+}
+
+export async function addQuestionAttempted(req, res) {
+  try {
+    const userId = req.params.id;
+    const { questionId, attemptedAt, partner } = req.body;
+
+    if (!questionId) {
+      return res.status(400).json({ message: "Question id is required" });
+    }
+
+    if (!isValidObjectId(userId)) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: `User ${userId} not found` });
+    }
+
+    // Create new attempted question entry
+    const attemptedQuestion = {
+      questionId: questionId,
+      attemptedAt: attemptedAt ? new Date(attemptedAt) : new Date(),
+      partner: partner || null,
+    };
+
+    // Add to questionsAttempted array
+    user.questionsAttempted.push(attemptedQuestion);
+    await user.save();
+
+    // Update the user's questionStats based on the question's difficulty
+    try {
+      // Fetch question based on question Id
+      const url = `${QUESTION_SERVICE_URL}${QUESTIONS_ENDPOINT}/${questionId}`;
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error(
+          `Failed to fetch question: ${response.status} ${response.statusText}`
+        );
+      }
+
+      const data = await response.json();
+      const rawDiff = data?.data?.difficulty ?? data?.difficulty;
+      const diff = typeof rawDiff === "string" ? rawDiff.toLowerCase() : null;
+
+      if (!user.questionStats) {
+        user.questionStats = { easy: 0, medium: 0, hard: 0 };
+      }
+      if (diff && ["easy", "medium", "hard"].includes(diff)) {
+        user.questionStats[diff] = (user.questionStats[diff] || 0) + 1;
+        await user.save();
+      }
+
+      return res.status(200).json({
+        message: "Question attempted entry added successfully",
+        data: formatUserResponse(user),
+      });
+    } catch (error) {
+      console.error(
+        `Error updating questionStats for question ${questionId}:`,
+        error
+      );
+    }
+
+    return res.status(200).json({
+      message: "Question attempted entry added successfully",
+      data: formatUserResponse(user),
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Unknown error when adding attempted question!" });
+  }
+}
+
+export async function getQuestionsAttempted(req, res) {
+  try {
+    const userId = req.user.id;
+
+    const user = await _findUserById(userId);
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    return res.status(200).json({
+      message: "Questions attempted retrieved successfully",
+      data: user.questionsAttempted || [],
+    });
+  } catch (err) {
+    console.error(err);
+    return res
+      .status(500)
+      .json({ message: "Unknown error when getting questions completed!" });
+  }
 }

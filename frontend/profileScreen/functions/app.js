@@ -71,10 +71,7 @@ async function initialiseProfile() {
 
         localStorage.setItem("user", JSON.stringify(profileData));
         
-        // Test with mock data first
-        const mockQuestionStats = { easy: 0, medium: 5, hard: 2 };
-        updateProgressChart(mockQuestionStats);
-        // updateProgressChart(profileData.questionStats);
+        updateProgressChart(profileData.questionStats);
         
         updateUserInfo(profileData);
     } catch (error) {
