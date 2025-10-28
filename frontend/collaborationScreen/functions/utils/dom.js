@@ -1,24 +1,28 @@
-function getElement(id) {
+function getElement(id, optional = false) {
   const el = document.getElementById(id);
-  if (!el) {
+  if (!el && !optional) {
     throw new Error(`Element with id "${id}" not found`);
   }
-  return el;
+  return el || null;
 }
 
 export function getDomRefs() {
   return {
-    sessionForm: getElement("sessionForm"),
-    sessionInput: getElement("sessionId"),
-    connectButton: getElement("connectBtn"),
+    // Optional (removed from new layout)
+    sessionForm: getElement("sessionForm", true),
+    sessionInput: getElement("sessionId", true),
+    connectButton: getElement("connectBtn", true),
+    statusText: getElement("statusText", true),
+    // Required
     disconnectButton: getElement("disconnectBtn"),
-    statusText: getElement("statusText"),
     participantsList: getElement("participantsList"),
     editorContainer: getElement("editorContainer"),
+    questionContainer: getElement("questionContainer", true),
   };
 }
 
 export function updateStatus(refs, message, tone = "info") {
+  if (!refs.statusText) return; // Status UI removed in new layout
   refs.statusText.textContent = message;
   refs.statusText.dataset.tone = tone;
 }
@@ -42,7 +46,7 @@ export function renderParticipants(refs, participants = []) {
 }
 
 export function setConnectionState(refs, { connected }) {
-  refs.connectButton.disabled = connected;
-  refs.sessionInput.disabled = connected;
+  if (refs.connectButton) refs.connectButton.disabled = connected;
+  if (refs.sessionInput) refs.sessionInput.disabled = connected;
   refs.disconnectButton.disabled = !connected;
 }

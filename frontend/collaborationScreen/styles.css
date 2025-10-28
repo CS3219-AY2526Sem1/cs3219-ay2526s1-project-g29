@@ -41,8 +41,8 @@
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
-  width: 320px;
-  flex-shrink: 0;
+  flex: 0 0 33.333%;
+  max-width: 560px;
   position: relative;
   z-index: 2;
 }
@@ -105,16 +105,14 @@
   cursor: not-allowed;
 }
 
-.status-card,
-.participants-card {
+.participants-card, .question-card {
   background: rgba(76, 81, 191, 0.2);
   padding: 1.25rem;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.status-card h3,
-.participants-card h3 {
+.participants-card h3, .question-card h3 {
   margin-bottom: 0.75rem;
   color: #ffffff;
 }
@@ -153,9 +151,6 @@
   border-radius: 8px;
   font-size: 0.95rem;
   color: #ffffff;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
 }
 
 .participants-list .empty-state {
@@ -165,7 +160,7 @@
 }
 
 .editor-panel {
-  flex: 1;
+  flex: 0 0 66.666%;
   background: rgba(0, 0, 0, 0.25);
   border-radius: 16px;
   display: flex;
@@ -174,6 +169,22 @@
   min-height: 70vh;
   position: relative;
   overflow: hidden;
+}
+
+.disconnect-btn {
+  background: #e53e3e;
+  color: #ffffff;
+  border: none;
+  padding: 0.9rem 1rem;
+  border-radius: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s ease, opacity 0.2s ease;
+}
+
+.disconnect-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 
 /* Remote collaborator selection highlight */
