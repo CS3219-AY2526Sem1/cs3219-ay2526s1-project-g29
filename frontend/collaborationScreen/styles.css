@@ -105,14 +105,16 @@
   cursor: not-allowed;
 }
 
-.participants-card, .question-card {
+.participants-card,
+.question-card {
   background: rgba(76, 81, 191, 0.2);
   padding: 1.25rem;
   border-radius: 12px;
   box-shadow: 0 8px 20px rgba(0, 0, 0, 0.25);
 }
 
-.participants-card h3, .question-card h3 {
+.participants-card h3,
+.question-card h3 {
   margin-bottom: 0.75rem;
   color: #ffffff;
 }
@@ -134,9 +136,77 @@
 }
 
 .question-description {
-  color: rgba(255,255,255,0.9);
+  color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
+  white-space: normal;
+}
+
+/* Inline code */
+.question-description code {
+  font-family: Menlo, Monaco, 'Courier New', monospace;
+  font-size: 0.875em;
+  background-color: rgba(255, 255, 255, 0.1);
+  padding: 0.2rem 0.4rem;
+  border-radius: 3px;
+  color: #e8e8e8;
+  font-weight: 500;
+}
+
+/* Bold text */
+.question-description strong {
+  color: #ffffff;
+  font-weight: 600;
+  display: inline;
+  margin-bottom: 0.25rem;
+}
+
+/* Code blocks (examples) */
+.question-description pre {
+  background-color: #0d0d0d;
+  border-left: 2px solid #3a3a3a;
+  color: rgba(255, 255, 255, 0.75);
+  font-family: Menlo, Monaco, 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  margin: 0.25rem 0;
+  overflow: visible;
+  padding: 1rem;
   white-space: pre-wrap;
+  word-wrap: break-word;
+  border-radius: 4px;
+}
+
+.question-description pre strong {
+  display: inline;
+  color: #ffffff;
+  margin: 0;
+  font-weight: 600;
+}
+
+/* Superscript */
+.question-description sup {
+  font-size: 0.7em;
+  vertical-align: super;
+}
+
+/* Bullet points */
+.question-description ul {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5rem 0;
+}
+
+.question-description li {
+  padding-left: 1.5rem;
+  position: relative;
+  margin: 0.5rem 0;
+}
+
+.question-description li::before {
+  content: "•";
+  position: absolute;
+  left: 0.5rem;
+  color: rgba(255, 255, 255, 0.5);
 }
 
 #statusText {
@@ -277,7 +347,8 @@
     padding: 1rem;
   }
 }
-.editor-container > * {
+
+.editor-container>* {
   flex: 1;
   height: 100% !important;
 }

@@ -9,6 +9,8 @@ export const DIFFICULTIES = [
 export const TOPICS = [
     { value: "arrays", label: "Arrays" },
     { value: "strings", label: "Strings" },
+    { value: "algorithms", label: "Algorithms" },
+    { value: "data-structures", label: "Data Structures" },
     { value: "hash-tables", label: "Hash Tables" },
     { value: "linked-lists", label: "Linked Lists" },
     { value: "stacks", label: "Stacks" },
@@ -23,6 +25,7 @@ export const TOPICS = [
     { value: "greedy", label: "Greedy Algorithms" },
     { value: "bit-manipulation", label: "Bit Manipulation" },
     { value: "math", label: "Math" },
+    { value: "matrix", label: "Matrix" },
 ];
 
 export function getTopicLabel(value) {
@@ -39,7 +42,7 @@ export function getTopicLabel(value) {
             .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
             .join(" ");
     }
-    
+
     return value;
 }
 

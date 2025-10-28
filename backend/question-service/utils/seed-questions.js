@@ -9,20 +9,22 @@ const MONGO_URI = process.env.QUESTION_DB_CLOUD_URI || 'mongodb://127.0.0.1:2701
 const sampleQuestions = [
     {
         title: "Reverse a String",
-        description: `Write a function that reverses a string. The input string is given as an array of characters s.
+        description: `Write a function that reverses a string. The input string is given as an array of characters <code>s</code>.<br><br>
 
-You must do this by modifying the input array in-place with O(1) extra memory.
+You must do this by modifying the input array in-place with <code>O(1)</code> extra memory.<br><br><br>
 
-Example 1:
-Input: s = ["h","e","l","l","o"]
-Output: ["o","l","l","e","h"]
 
-Example 2:
-Input: s = ["H","a","n","n","a","h"]
-Output: ["h","a","n","n","a","H"]
+<strong>Example 1:</strong>
+<pre><strong>Input:</strong> s = ["h","e","l","l","o"]
+<strong>Output:</strong> ["o","l","l","e","h"]</pre>
+<strong>Example 2:</strong>
+<pre><strong>Input:</strong> s = ["H","a","n","n","a","h"]
+<strong>Output:</strong> ["h","a","n","n","a","H"]</pre><br><br>
 
-Constraints:
-1 <= s.length <= 105 s[i] is a printable ascii character.`,
+
+<strong>Constraints:</strong><br>
+- <code>1 <= s.length <= 10<sup>5</sup></code><br>
+- <code>s[i]</code> is a printable ascii character.`,
         difficulty: "easy",
         topics: ["strings", "algorithms"],
         constraints: `• 1 <= s.length <= 10^5
@@ -36,30 +38,31 @@ Constraints:
     },
     {
         title: "Add Binary",
-        description: "Given two binary strings a and b, return their sum as a binary string.",
+        description: "Given two binary strings <code>a</code> and <code>b</code>, return their sum as a binary string.",
         difficulty: "easy",
         topics: ["bit-manipulation", "algorithms", "strings"],
     },
     {
         title: "Fibonacci Number",
-        description: `The Fibonacci numbers, commonly denoted F(n) form a sequence, called the Fibonacci sequence, such that each number is the sum of the two preceding ones, starting from 0 and 1. That is,
+        description: `The Fibonacci numbers, commonly denoted <code>F(n)</code> form a sequence, called the Fibonacci sequence, such that each number is the sum of the two preceding ones, starting from 0 and 1. <br><br>
 
-F(0) = 0, F(1) = 1
-F(n) = F(n - 1) + F(n - 2), for n > 1.
+That is:<br>
+<code>F(0) = 0, F(1) = 1</code><br>
+<code>F(n) = F(n - 1) + F(n - 2)</code>, for <code>n > 1</code>.<br><br><br>
 
-Given n, calculate F(n).`,
+Given <code>n</code>, calculate <code>F(n)</code>.`,
         difficulty: "easy",
         topics: ["recursion", "algorithms", "dynamic-programming"],
     },
     {
         title: "Repeated DNA Sequences",
-        description: `The DNA sequence is composed of a series of nucleotides abbreviated as 'A', 'C', 'G', and 'T'.
+        description: `The DNA sequence is composed of a series of nucleotides abbreviated as <code>'A'</code>, <code>'C'</code>, <code>'G'</code>, and <code>'T'</code>.<br><br>
 
-For example, "ACGAATTCCG" is a DNA sequence.
+For example, <code>"ACGAATTCCG"</code> is a DNA sequence.<br><br>
 
-When studying DNA, it is useful to identify repeated sequences within the DNA.
+When studying DNA, it is useful to identify repeated sequences within the DNA.<br><br><br>
 
-Given a string s that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule. You may return the answer in any order.`,
+Given a string <code>s</code> that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule. You may return the answer in any order.`,
         difficulty: "medium",
         topics: ["algorithms", "bit-manipulation", "hash-tables", "strings"],
     },
@@ -83,7 +86,9 @@ A common subsequence of two strings is a subsequence that is common to both stri
     },
     {
         title: "Rotate Image",
-        description: "You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).",
+        description: `You are given an <code>n x n</code> 2D matrix representing an image.<br><br>
+
+Rotate the image by 90 degrees (clockwise).`,
         difficulty: "medium",
         topics: ["arrays", "algorithms", "matrix"],
     },
@@ -95,7 +100,7 @@ A common subsequence of two strings is a subsequence that is common to both stri
     },
     {
         title: "Sliding Window Maximum",
-        description: `You are given an array of integers nums, there is a sliding window of size k which is moving from the very left of the array to the very right. You can only see the k numbers in the window. Each time the sliding window moves right by one position.
+        description: `You are given an array of integers <code>nums</code>, there is a sliding window of size <code>k</code> which is moving from the very left of the array to the very right. You can only see the <code>k</code> numbers in the window. Each time the sliding window moves right by one position.<br><br>
 
 Return the max sliding window.`,
         difficulty: "hard",
@@ -103,7 +108,7 @@ Return the max sliding window.`,
     },
     {
         title: "Serialize and Deserialize a Binary Tree",
-        description: `Serialization is the process of converting a data structure or object into a sequence of bits so that it can be stored in a file or memory buffer, or transmitted across a network connection link to be reconstructed later in the same or another computer environment.
+        description: `Serialization is the process of converting a data structure or object into a sequence of bits so that it can be stored in a file or memory buffer, or transmitted across a network connection link to be reconstructed later in the same or another computer environment.<br><br>
 
 Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work. You just need to ensure that a binary tree can be serialized to a string and this string can be deserialized to the original tree structure.`,
         difficulty: "hard",
@@ -111,10 +116,10 @@ Design an algorithm to serialize and deserialize a binary tree. There is no rest
     },
     {
         title: "Wildcard Matching",
-        description: `Given an input string (s) and a pattern (p), implement wildcard pattern matching with support for '?' and '*' where:
+        description: `Given an input string <code>s</code> and a pattern <code>p</code>, implement wildcard pattern matching with support for <code>'?'</code> and <code>'*'</code> where:<br><br>
 
-'?' Matches any single character.
-'*' Matches any sequence of characters (including the empty sequence).
+<code>'?'</code> matches any single character.<br>
+<code>'*'</code> matches any sequence of characters (including the empty sequence).<br><br><br>
 
 The matching should cover the entire input string (not partial).`,
         difficulty: "hard",
@@ -122,13 +127,13 @@ The matching should cover the entire input string (not partial).`,
     },
     {
         title: "Chalkboard XOR Game",
-        description: `You are given an array of integers nums represents the numbers written on a chalkboard.
+        description: `You are given an array of integers <code>nums</code> representing the numbers written on a chalkboard.<br><br>
 
-Alice and Bob take turns erasing exactly one number from the chalkboard, with Alice starting first. If erasing a number causes the bitwise XOR of all the elements of the chalkboard to become 0, then that player loses. The bitwise XOR of one element is that element itself, and the bitwise XOR of no elements is 0.
+Alice and Bob take turns erasing exactly one number from the chalkboard, with Alice starting first. If erasing a number causes the bitwise XOR of all the elements of the chalkboard to become <code>0</code>, then that player loses. The bitwise XOR of one element is that element itself, and the bitwise XOR of no elements is <code>0</code>.<br><br>
 
-Also, if any player starts their turn with the bitwise XOR of all the elements of the chalkboard equal to 0, then that player wins.
+Also, if any player starts their turn with the bitwise XOR of all the elements of the chalkboard equal to <code>0</code>, then that player wins.<br><br><br>
 
-Return true if and only if Alice wins the game, assuming both players play optimally.`,
+Return <code>true</code> if and only if Alice wins the game, assuming both players play optimally.`,
         difficulty: "hard",
         topics: ["bit-manipulation"],
     },

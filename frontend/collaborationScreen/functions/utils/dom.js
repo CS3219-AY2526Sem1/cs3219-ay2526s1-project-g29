@@ -65,10 +65,10 @@ export function renderQuestion(refs, question) {
   const topics = Array.isArray(question.topics) ? question.topics.join(', ') : '';
   el.innerHTML = `
     <div class="question-meta">
-      <div class="question-topics">${topics}</div>
+      <div class="question-topics">${escapeHtml(topics)}</div>
       <div class="question-title"><strong>${escapeHtml(question.title ?? '')}</strong></div>
     </div>
-    <div class="question-description">${escapeHtml(question.description ?? '')}</div>
+    <div class="question-description">${question.description ?? ''}</div>
   `;
 }
 

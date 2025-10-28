@@ -1,179 +1,201 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeerPrep - Match</title>
-    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
-    <link rel="stylesheet" href="../shared/sharedStyles.css">
-    <link rel="stylesheet" href="matchScreenStyles.css">
-  </head>
-  <body>
-    <!-- Navigation Header -->
-    <div class="header">
-      <div class="nav-tabs">
-        <a href="../profileScreen/profileScreen.html" class="nav-tab" id="profileTab">Profile</a>
-        <a href="../matchScreen/matchScreen.html" class="nav-tab active" id="matchTab">Match</a>
-        <a href="../historyScreen/historyScreen.html" class="nav-tab" id="historyTab">History</a>
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerPrep - Match</title>
+  <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+  <link rel="stylesheet" href="../shared/sharedStyles.css">
+  <link rel="stylesheet" href="matchScreenStyles.css">
+</head>
+
+<body>
+  <!-- Navigation Header -->
+  <div class="header">
+    <div class="nav-tabs">
+      <a href="../profileScreen/profileScreen.html" class="nav-tab" id="profileTab">Profile</a>
+      <a href="../matchScreen/matchScreen.html" class="nav-tab active" id="matchTab">Match</a>
+      <a href="../historyScreen/historyScreen.html" class="nav-tab" id="historyTab">History</a>
+    </div>
+
+    <div class="logo">PeerPrep</div>
+
+    <div class="user-menu">
+      <div class="user-avatar" id="userAvatar">
+        <i class="user-icon">👤</i>
+      </div>
+      <div class="dropdown-menu" id="dropdownMenu">
+        <a href="../dashboardScreen/dashboardScreen.html" class="dropdown-item">Dashboard</a>
+        <a href="../loginScreen/loginScreen.html" class="dropdown-item" id="logoutBtn">Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Match Content -->
+  <div class="match-container">
+    <div class="match-header">
+      <h1 class="match-title">Find Your Match</h1>
+      <p class="match-subtitle">Select your preferred difficulty and topics</p>
+    </div>
+
+    <form id="matchForm" class="match-form">
+      <!-- Difficulty Selection -->
+      <div class="form-section">
+        <h2 class="section-title">Difficulty Level</h2>
+        <div class="difficulty-options">
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="easy" required>
+            <div class="difficulty-circle easy">
+              <span class="difficulty-label">Easy</span>
+            </div>
+          </label>
+
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="medium" required>
+            <div class="difficulty-circle medium">
+              <span class="difficulty-label">Medium</span>
+            </div>
+          </label>
+
+          <label class="difficulty-option">
+            <input type="radio" name="difficulty" value="hard" required>
+            <div class="difficulty-circle hard">
+              <span class="difficulty-label">Hard</span>
+            </div>
+          </label>
+        </div>
       </div>
 
-      <div class="logo">PeerPrep</div>
+      <!-- Topics Selection -->
+      <div class="form-section">
+        <h2 class="section-title">Topics <span class="required-note">(Select 1-16 topics)</span></h2>
+        <label class="select-all-topics-checkbox">
+          <input type="checkbox" id="selectAllTopics">
+          <span class="checkbox-label">Select All Topics</span>
+        </label>
+        <div class="topics-grid">
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="arrays">
+            <span class="checkbox-label">Arrays</span>
+          </label>
 
-      <div class="user-menu">
-        <div class="user-avatar" id="userAvatar">
-          <i class="user-icon">👤</i>
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="strings">
+            <span class="checkbox-label">Strings</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="algorithms">
+            <span class="checkbox-label">Algorithms</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="data-structures">
+            <span class="checkbox-label">Data Structures</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="hash-tables">
+            <span class="checkbox-label">Hash Tables</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="linked-lists">
+            <span class="checkbox-label">Linked Lists</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="stacks">
+            <span class="checkbox-label">Stacks</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="queues">
+            <span class="checkbox-label">Queues</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="trees">
+            <span class="checkbox-label">Trees</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="graphs">
+            <span class="checkbox-label">Graphs</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="sorting">
+            <span class="checkbox-label">Sorting</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="searching">
+            <span class="checkbox-label">Searching</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="dynamic-programming">
+            <span class="checkbox-label">Dynamic Programming</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="recursion">
+            <span class="checkbox-label">Recursion</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="backtracking">
+            <span class="checkbox-label">Backtracking</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="greedy">
+            <span class="checkbox-label">Greedy Algorithms</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="bit-manipulation">
+            <span class="checkbox-label">Bit Manipulation</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="math">
+            <span class="checkbox-label">Math</span>
+          </label>
+
+          <label class="topic-checkbox">
+            <input type="checkbox" name="topics" value="matrix">
+            <span class="checkbox-label">Matrix</span>
+          </label>
         </div>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <a href="../dashboardScreen/dashboardScreen.html" class="dropdown-item">Dashboard</a>
-          <a href="../loginScreen/loginScreen.html" class="dropdown-item" id="logoutBtn">Logout</a>
-        </div>
+      </div>
+
+      <!-- Action Buttons -->
+      <div class="form-actions">
+        <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
+        <button type="submit" class="btn btn-primary" id="findMatchBtn" disabled>Select Options</button>
+      </div>
+    </form>
+
+    <!-- Matching Status (hidden by default) -->
+    <div id="matchingStatus" class="matching-status hidden">
+      <div class="status-card">
+        <div class="spinner-large"></div>
+        <h2 class="status-title">Finding your match...</h2>
+        <p class="status-message" id="statusMessage">Searching for peers with similar preferences</p>
+        <button type="button" class="btn-cancel" id="cancelMatchBtn">Cancel Search</button>
       </div>
     </div>
 
-    <!-- Match Content -->
-    <div class="match-container">
-      <div class="match-header">
-        <h1 class="match-title">Find Your Match</h1>
-        <p class="match-subtitle">Select your preferred difficulty and topics</p>
-      </div>
-
-      <form id="matchForm" class="match-form">
-        <!-- Difficulty Selection -->
-        <div class="form-section">
-          <h2 class="section-title">Difficulty Level</h2>
-          <div class="difficulty-options">
-            <label class="difficulty-option">
-              <input type="radio" name="difficulty" value="easy" required>
-              <div class="difficulty-circle easy">
-                <span class="difficulty-label">Easy</span>
-              </div>
-            </label>
-
-            <label class="difficulty-option">
-              <input type="radio" name="difficulty" value="medium" required>
-              <div class="difficulty-circle medium">
-                <span class="difficulty-label">Medium</span>
-              </div>
-            </label>
-
-            <label class="difficulty-option">
-              <input type="radio" name="difficulty" value="hard" required>
-              <div class="difficulty-circle hard">
-                <span class="difficulty-label">Hard</span>
-              </div>
-            </label>
-          </div>
-        </div>
-
-        <!-- Topics Selection -->
-        <div class="form-section">
-          <h2 class="section-title">Topics <span class="required-note">(Select 1-16 topics)</span></h2>
-          <div class="topics-grid">
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="arrays">
-              <span class="checkbox-label">Arrays</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="strings">
-              <span class="checkbox-label">Strings</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="hash-tables">
-              <span class="checkbox-label">Hash Tables</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="linked-lists">
-              <span class="checkbox-label">Linked Lists</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="stacks">
-              <span class="checkbox-label">Stacks</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="queues">
-              <span class="checkbox-label">Queues</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="trees">
-              <span class="checkbox-label">Trees</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="graphs">
-              <span class="checkbox-label">Graphs</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="sorting">
-              <span class="checkbox-label">Sorting</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="searching">
-              <span class="checkbox-label">Searching</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="dynamic-programming">
-              <span class="checkbox-label">Dynamic Programming</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="recursion">
-              <span class="checkbox-label">Recursion</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="backtracking">
-              <span class="checkbox-label">Backtracking</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="greedy">
-              <span class="checkbox-label">Greedy Algorithms</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="bit-manipulation">
-              <span class="checkbox-label">Bit Manipulation</span>
-            </label>
-
-            <label class="topic-checkbox">
-              <input type="checkbox" name="topics" value="math">
-              <span class="checkbox-label">Math</span>
-            </label>
-          </div>
-        </div>
-
-        <!-- Action Buttons -->
-        <div class="form-actions">
-          <button type="button" class="btn btn-secondary" id="cancelBtn">Cancel</button>
-          <button type="submit" class="btn btn-primary" id="findMatchBtn" disabled>Select Options</button>
-        </div>
-      </form>
-
-      <!-- Matching Status (hidden by default) -->
-      <div id="matchingStatus" class="matching-status hidden">
-        <div class="status-card">
-          <div class="spinner-large"></div>
-          <h2 class="status-title">Finding your match...</h2>
-          <p class="status-message" id="statusMessage">Searching for peers with similar preferences</p>
-          <button type="button" class="btn-cancel" id="cancelMatchBtn">Cancel Search</button>
-        </div>
-      </div>
-
-      <!-- Message Container (hidden by default) -->
-      <div id="messageContainer" class="message-container hidden">
-        <div id="messageText" class="message-text"></div>
-      </div>
+    <!-- Message Container (hidden by default) -->
+    <div id="messageContainer" class="message-container hidden">
+      <div id="messageText" class="message-text"></div>
     </div>
+  </div>
 
-    <script type="module" src="functions/app.js"></script>
-  </body>
+  <script type="module" src="functions/app.js"></script>
+</body>
+
 </html>
