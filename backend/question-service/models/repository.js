@@ -6,7 +6,6 @@ class QuestionRepository {
         const {
             difficulty,
             topics,
-            tags,
             isActive = true,
             page = 1,
             limit = 20,
@@ -22,10 +21,6 @@ class QuestionRepository {
 
         if (topics && topics.length > 0) {
             query.topics = { $in: Array.isArray(topics) ? topics : [topics] };
-        }
-
-        if (tags && tags.length > 0) {
-            query.tags = { $in: Array.isArray(tags) ? tags : [tags] };
         }
 
         const skip = (page - 1) * limit;

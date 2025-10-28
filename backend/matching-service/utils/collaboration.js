@@ -57,7 +57,7 @@ export async function notifyCollabMatch({ sessionId, users, matchedTopics, diffi
           description: question.description,
           difficulty: question.difficulty,
           topics: question.topics,
-          examples: question.examples || [],
+          constraints: question.constraints,
         } : null,
       }),
     });

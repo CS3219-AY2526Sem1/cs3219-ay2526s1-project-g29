@@ -2,12 +2,6 @@ const mongoose = require('mongoose');
 
 const { Schema } = mongoose;
 
-const ExampleSchema = new Schema({
-    input: { type: Schema.Types.Mixed, required: true },
-    output: { type: Schema.Types.Mixed, required: true },
-    explanation: { type: String, trim: true }
-}, { _id: false });
-
 const TestCaseSchema = new Schema({
     input: { type: Schema.Types.Mixed, required: true },
     output: { type: Schema.Types.Mixed, required: true },
@@ -39,10 +33,7 @@ const QuestionSchema = new Schema({
         index: true
     },
     topics: { type: [String], index: true, default: [] },
-    tags: { type: [String], default: [] },
-    examples: { type: [ExampleSchema], default: [] },
     constraints: { type: String, trim: true },
-    hints: { type: [String], default: [] },
     canonicalSolutions: { type: [SolutionSchema], default: [] },
     testCases: { type: [TestCaseSchema], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
@@ -57,7 +48,6 @@ QuestionSchema.index({
     title: 'text',
     description: 'text',
     topics: 'text',
-    tags: 'text'
 }, { weights: { title: 5, description: 2, topics: 3 } });
 
 QuestionSchema.index({ difficulty: 1, isActive: 1, topics: 1 });
