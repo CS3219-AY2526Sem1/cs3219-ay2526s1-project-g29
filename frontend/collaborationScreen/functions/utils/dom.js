@@ -58,16 +58,24 @@ export function renderQuestion(refs, question) {
   if (!question) {
     const p = document.createElement('p');
     p.className = 'question-placeholder';
-    p.textContent = 'Question will appear here.';
+    p.textContent = 'There are no questions for the selected topics.';
     el.appendChild(p);
     return;
   }
-  const topics = Array.isArray(question.topics) ? question.topics.join(', ') : '';
+  const topicsArr = Array.isArray(question.topics) ? question.topics : [];
+  const diff = String(question.difficulty || '');
+  const diffLabel = diff || 'unknown';
+  const topicTags = topicsArr
+    .map((t) => `<span class="tag">${escapeHtml(String(t))}</span>`) 
+    .join('');
   el.innerHTML = `
     <div class="question-meta">
-      <div class="question-topics">${escapeHtml(topics)}</div>
       <div class="question-title"><strong>${escapeHtml(question.title ?? '')}</strong></div>
-    </div>
+      </div>
+      <div class="question-tags">
+        <span class="tag tag-diff tag-${escapeHtml(diff)}">${escapeHtml(diffLabel)}</span>
+        ${topicTags}
+      </div>
     <div class="question-description">${question.description ?? ''}</div>
   `;
 }
