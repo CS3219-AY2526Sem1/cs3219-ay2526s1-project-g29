@@ -2,7 +2,7 @@ const mongoose = require('mongoose');
 const Question = require('../models/question-model');
 const path = require('path');
 
-require('dotenv').config({ path: path.join(__dirname, '..', '.env') });
+require('dotenv').config({ path: path.join(__dirname, '..', '..', '..', '.env') });
 
 const MONGO_URI = process.env.QUESTION_DB_CLOUD_URI || 'mongodb://127.0.0.1:27017/peerprepQuestionServiceDB';
 
@@ -11,20 +11,20 @@ const sampleQuestions = [
         title: "Reverse a String",
         description: `Write a function that reverses a string. The input string is given as an array of characters s.
 
-You must do this by modifying the input array in-place with O(1) extra memory.`,
+You must do this by modifying the input array in-place with O(1) extra memory.
+
+Example 1:
+Input: s = ["h","e","l","l","o"]
+Output: ["o","l","l","e","h"]
+
+Example 2:
+Input: s = ["H","a","n","n","a","h"]
+Output: ["h","a","n","n","a","H"]
+
+Constraints:
+1 <= s.length <= 105 s[i] is a printable ascii character.`,
         difficulty: "easy",
         topics: ["strings", "algorithms"],
-        tags: ["in-place", "two-pointers"],
-        examples: [
-            {
-                input: 's = ["h","e","l","l","o"]',
-                output: '["o","l","l","e","h"]'
-            },
-            {
-                input: 's = ["H","a","n","n","a","h"]',
-                output: '["h","a","n","n","a","H"]'
-            }
-        ],
         constraints: `• 1 <= s.length <= 10^5
 • s[i] is a printable ascii character.`
     },
@@ -32,17 +32,13 @@ You must do this by modifying the input array in-place with O(1) extra memory.`,
         title: "Linked List Cycle Detection",
         description: "Implement a function to detect if a linked list contains a cycle.",
         difficulty: "easy",
-        topics: ["data-structures", "algorithms", "linked-list"],
-        tags: ["cycle-detection", "two-pointers"],
-        examples: []
+        topics: ["data-structures", "algorithms", "linked-lists"],
     },
     {
         title: "Add Binary",
         description: "Given two binary strings a and b, return their sum as a binary string.",
         difficulty: "easy",
-        topics: ["bit-manipulation", "algorithms", "string"],
-        tags: ["binary", "math"],
-        examples: []
+        topics: ["bit-manipulation", "algorithms", "strings"],
     },
     {
         title: "Fibonacci Number",
@@ -54,8 +50,6 @@ F(n) = F(n - 1) + F(n - 2), for n > 1.
 Given n, calculate F(n).`,
         difficulty: "easy",
         topics: ["recursion", "algorithms", "dynamic-programming"],
-        tags: ["math", "memoization"],
-        examples: []
     },
     {
         title: "Repeated DNA Sequences",
@@ -67,17 +61,13 @@ When studying DNA, it is useful to identify repeated sequences within the DNA.
 
 Given a string s that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule. You may return the answer in any order.`,
         difficulty: "medium",
-        topics: ["algorithms", "bit-manipulation", "hash-table", "string"],
-        tags: ["sliding-window", "pattern-matching"],
-        examples: []
+        topics: ["algorithms", "bit-manipulation", "hash-tables", "strings"],
     },
     {
         title: "LRU Cache Design",
         description: "Design and implement an LRU (Least Recently Used) cache.",
         difficulty: "medium",
-        topics: ["data-structures", "design", "hash-table"],
-        tags: ["cache", "linked-list", "design"],
-        examples: []
+        topics: ["data-structures", "hash-tables"],
     },
     {
         title: "Longest Common Subsequence",
@@ -90,24 +80,18 @@ For example, "ace" is a subsequence of "abcde".
 A common subsequence of two strings is a subsequence that is common to both strings.`,
         difficulty: "medium",
         topics: ["strings", "algorithms", "dynamic-programming"],
-        tags: ["dp", "subsequence"],
-        examples: []
     },
     {
         title: "Rotate Image",
         description: "You are given an n x n 2D matrix representing an image, rotate the image by 90 degrees (clockwise).",
         difficulty: "medium",
         topics: ["arrays", "algorithms", "matrix"],
-        tags: ["in-place", "rotation"],
-        examples: []
     },
     {
         title: "Validate Binary Search Tree",
         description: "Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
         difficulty: "medium",
-        topics: ["data-structures", "algorithms", "tree", "binary-search-tree"],
-        tags: ["tree-traversal", "validation"],
-        examples: []
+        topics: ["data-structures", "algorithms", "trees"],
     },
     {
         title: "Sliding Window Maximum",
@@ -115,9 +99,7 @@ A common subsequence of two strings is a subsequence that is common to both stri
 
 Return the max sliding window.`,
         difficulty: "hard",
-        topics: ["arrays", "algorithms", "sliding-window"],
-        tags: ["deque", "monotonic-queue"],
-        examples: []
+        topics: ["arrays", "algorithms"],
     },
     {
         title: "Serialize and Deserialize a Binary Tree",
@@ -125,9 +107,7 @@ Return the max sliding window.`,
 
 Design an algorithm to serialize and deserialize a binary tree. There is no restriction on how your serialization/deserialization algorithm should work. You just need to ensure that a binary tree can be serialized to a string and this string can be deserialized to the original tree structure.`,
         difficulty: "hard",
-        topics: ["data-structures", "algorithms", "tree", "binary-tree"],
-        tags: ["design", "dfs", "bfs"],
-        examples: []
+        topics: ["data-structures", "algorithms", "trees"],
     },
     {
         title: "Wildcard Matching",
@@ -139,8 +119,6 @@ Design an algorithm to serialize and deserialize a binary tree. There is no rest
 The matching should cover the entire input string (not partial).`,
         difficulty: "hard",
         topics: ["strings", "algorithms", "dynamic-programming"],
-        tags: ["pattern-matching", "recursion"],
-        examples: []
     },
     {
         title: "Chalkboard XOR Game",
@@ -152,9 +130,7 @@ Also, if any player starts their turn with the bitwise XOR of all the elements o
 
 Return true if and only if Alice wins the game, assuming both players play optimally.`,
         difficulty: "hard",
-        topics: ["brainteaser", "game-theory", "bit-manipulation"],
-        tags: ["logic", "math"],
-        examples: []
+        topics: ["bit-manipulation"],
     },
 ];
 
