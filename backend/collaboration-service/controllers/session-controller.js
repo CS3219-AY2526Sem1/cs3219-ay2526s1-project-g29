@@ -2,6 +2,7 @@ import { env } from '../utils/env.js';
 import { createSessionWithId, getSession, removeParticipant, closeSession } from '../services/session-store.js';
 import { toPublicSession } from '../models/session-model.js';
 import { disconnectUserFromSession } from '../middleware/ws-server.js';
+import axios from 'axios';
 
 function checkInternalAuth(req) {
   const token = req.headers['x-internal-token'] || req.headers['X-Internal-Token'];
@@ -40,12 +41,30 @@ export function getSessionHandler(req, res) {
 }
 
 // Authenticated user proactively leaves a session
-export function leaveSessionHandler(req, res) {
+export async function leaveSessionHandler(req, res) {
   const { id } = req.params; // session id
   const user = req.user; // set by requireAuth middleware
+  const { code } = req.body;
 
   const s = getSession(id);
   if (!s) return res.status(404).json({ message: 'session not found' });
+
+  try {
+    await axios.post(`${env.historyServiceUrl}/api/history/saveHistory`, {
+      sessionId: id,
+      userId: user.id,
+      username: user.username || user.email || 'anonymous',
+      questionId: s.question?.id,
+      submittedCode: code || '',
+    }, {
+      timeout: 5000
+    });
+
+    console.log(`Saved history for user ${user.id} in session ${id}`);
+  } catch (error) {
+    console.error('Failed to save history:', error.message);
+    // Don't fail the disconnect if history save fails
+  }
 
   // Remove participant from store
   removeParticipant(id, user.id);

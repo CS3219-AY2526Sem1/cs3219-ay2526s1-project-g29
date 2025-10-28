@@ -75,7 +75,7 @@ async function handleConnect(refs) {
         });
 
         // Send initial full content to sync
-        try { state.realtime.sendFull(); } catch {}
+        try { state.realtime.sendFull(); } catch { }
 
         state.editor?.instance?.layout?.();
       },
@@ -116,10 +116,20 @@ async function handleDisconnect(refs, { manual }) {
 
   try {
     if (state.sessionId) {
+      const currentCode = state.editor?.model?.getValue() || '';
+
       await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/leave`, {
         method: "POST",
         credentials: "include",
-      }).catch(() => {});
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: currentCode
+        })
+      }).catch((err) => {
+        console.error('Failed to leave session:', err);
+      });
     }
     state.socket.disconnect();
   } catch (error) {

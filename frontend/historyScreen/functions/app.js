@@ -1,9 +1,10 @@
 import { elements } from "./elements.js";
 import {
     checkSession,
-    getQuestionsAttempted,
+    // getQuestionsAttempted,
     logout,
     getQuestionById,
+    getUserHistory,
 } from "./auth.js";
 import { renderHistoryItems, filterHistory } from "./history.js";
 import { DIFFICULTIES, TOPICS } from "../../shared/filters.js";
@@ -28,11 +29,13 @@ async function initialise() {
         return;
     }
 
+    const userId = session.data?.user?.id || session.data?.id;
+
     addFiltersToUI();
 
     setupEventListeners();
 
-    await loadHistory();
+    await loadHistory(userId);
 }
 
 function addFiltersToUI() {
@@ -94,17 +97,44 @@ function setupEventListeners() {
     });
 }
 
-async function loadHistory() {
+async function loadHistory(userId) {
     try {
-        questionsAttempted = await getQuestionsAttempted();
+        // questionsAttempted = await getQuestionsAttempted();
+        const historyRecords = await getUserHistory(userId);
         historyData = [];
-        for (const questionAttempted of questionsAttempted) {
-            const questionData = await getQuestionById(questionAttempted.questionId);
-            historyData.push({
-                ...questionAttempted,
-                ...questionData,
-            });
+        for (const record of historyRecords) {
+            const currentUserParticipant = record.participants.find(
+                p => p.id === userId
+            );
+
+            if (!currentUserParticipant) continue;
+
+            //find partner
+            const partner = record.participants.find(p => p.id !== userId);
+
+            const questionData = await getQuestionById(record.questionId);
+
+            if (questionData) {
+                historyData.push({
+                    sessionId: record.sessionId,
+                    questionId: record.questionId,
+                    title: questionData.title,
+                    difficulty: questionData.difficulty,
+                    topics: questionData.topics || [],
+                    attemptedAt: record.createdAt, // or record.updatedAt
+                    partner: partner?.username || 'Unknown',
+                    latestCode: currentUserParticipant.latestCode,
+                });
+            }
         }
+
+        // for (const questionAttempted of questionsAttempted) {
+        //     const questionData = await getQuestionById(questionAttempted.questionId);
+        //     historyData.push({
+        //         ...questionAttempted,
+        //         ...questionData,
+        //     });
+        // }
         renderHistoryItems(historyData);
     } catch (error) {
         console.error("Error loading history:", error);

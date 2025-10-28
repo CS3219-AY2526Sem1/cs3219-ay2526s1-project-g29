@@ -80,3 +80,27 @@ export async function getQuestionById(questionId) {
         return null;
     }
 }
+
+export async function getUserHistory(userId) {
+    try {
+        const response = await fetch(
+            `${config.historyServiceUrl}/api/history/users/${userId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch user history");
+        }
+
+        const data = await response.json();
+        return data.data || [];
+    } catch (error) {
+        console.error("Error fetching user history:", error);
+        return [];
+    }
+}

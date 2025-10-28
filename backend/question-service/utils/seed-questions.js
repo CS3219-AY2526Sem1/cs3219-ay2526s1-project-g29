@@ -27,8 +27,6 @@ You must do this by modifying the input array in-place with <code>O(1)</code> ex
 - <code>s[i]</code> is a printable ascii character.`,
         difficulty: "easy",
         topics: ["strings", "algorithms"],
-        constraints: `• 1 <= s.length <= 10^5
-• s[i] is a printable ascii character.`
     },
     {
         title: "Linked List Cycle Detection",

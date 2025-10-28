@@ -207,30 +207,6 @@ async function deleteQuestion(req, res) {
 }
 
 /**
- * POST /questions/:id/attempt
- * Record question attempt
- */
-async function recordAttempt(req, res) {
-    try {
-        const { id } = req.params;
-        const { success, timeMs } = req.body;
-
-        await QuestionRepository.recordAttempt(
-            id,
-            success === true,
-            timeMs || 0
-        );
-
-        return res.status(200).json({
-            message: 'Attempt recorded successfully'
-        });
-    } catch (err) {
-        console.error('recordAttempt error:', err);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-}
-
-/**
  * GET /questions/metadata/topics
  * Get all available topics
  */
@@ -240,20 +216,6 @@ async function getTopics(req, res) {
         return res.status(200).json({ data: topics });
     } catch (err) {
         console.error('getTopics error:', err);
-        return res.status(500).json({ message: 'Internal server error' });
-    }
-}
-
-/**
- * GET /questions/metadata/stats
- * Get question statistics
- */
-async function getStats(req, res) {
-    try {
-        const stats = await QuestionRepository.getStats();
-        return res.status(200).json({ data: stats });
-    } catch (err) {
-        console.error('getStats error:', err);
         return res.status(500).json({ message: 'Internal server error' });
     }
 }
@@ -305,9 +267,7 @@ module.exports = {
     getQuestions,
     updateQuestion,
     deleteQuestion,
-    recordAttempt,
     getTopics,
-    getStats,
     searchQuestions,
     getPopularQuestions
 };

@@ -2,15 +2,7 @@ const mongoose = require('mongoose');
 
 const { Schema } = mongoose;
 
-const TestCaseSchema = new Schema({
-    input: { type: Schema.Types.Mixed, required: true },
-    output: { type: Schema.Types.Mixed, required: true },
-    hidden: { type: Boolean, default: true },
-    weight: { type: Number, default: 1 }
-}, { _id: false });
-
 const SolutionSchema = new Schema({
-    language: { type: String, trim: true },
     code: { type: String },
     notes: { type: String }
 }, { _id: false });
@@ -18,8 +10,6 @@ const SolutionSchema = new Schema({
 const StatsSchema = new Schema({
     attempts: { type: Number, default: 0 },
     successfulAttempts: { type: Number, default: 0 },
-    averageTimeMs: { type: Number, default: 0 },
-    avgAttemptsPerSuccess: { type: Number, default: 0 }
 }, { _id: false });
 
 const QuestionSchema = new Schema({
@@ -33,28 +23,24 @@ const QuestionSchema = new Schema({
         index: true
     },
     topics: { type: [String], index: true, default: [] },
-    constraints: { type: String, trim: true },
-    canonicalSolutions: { type: [SolutionSchema], default: [] },
-    testCases: { type: [TestCaseSchema], default: [] },
+    solutions: { type: [SolutionSchema], default: [] },
     createdBy: { type: Schema.Types.ObjectId, ref: 'User' },
     isActive: { type: Boolean, default: true },
     visibility: { type: String, enum: ['public', 'private'], default: 'public' },
-    timeLimitMs: { type: Number, default: 2000 },
-    memoryLimitKb: { type: Number, default: 65536 },
     stats: { type: StatsSchema, default: () => ({}) },
 }, { timestamps: true });
 
-QuestionSchema.index({
-    title: 'text',
-    description: 'text',
-    topics: 'text',
-}, { weights: { title: 5, description: 2, topics: 3 } });
+//Search question by keywords, can remove if not gonna add search
+// QuestionSchema.index({
+//     title: 'text',
+//     description: 'text',
+//     topics: 'text',
+// }, { weights: { title: 5, description: 2, topics: 3 } });
 
 QuestionSchema.index({ difficulty: 1, isActive: 1, topics: 1 });
-QuestionSchema.index({ difficulty: 1, isActive: 1 });
-QuestionSchema.index({ topics: 1, isActive: 1 });
-QuestionSchema.index({ 'stats.attempts': -1 }); // For popularity ranking
-QuestionSchema.index({ createdAt: -1 });
+
+// QuestionSchema.index({ 'stats.attempts': -1 }); // For popularity ranking
+// QuestionSchema.index({ createdAt: -1 });
 
 QuestionSchema.pre('save', function (next) {
     if (!this.slug && this.title) {
