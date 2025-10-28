@@ -16,18 +16,13 @@ export async function initializeCollaborationScreen() {
   const refs = getDomRefs();
 
   renderParticipants(refs, []);
-  updateStatus(refs, "Enter a session ID to begin", "info");
+  // Status panel removed; no initial status message
 
   state.editor = await initializeEditor(refs.editorContainer);
   state.editor?.instance?.layout?.();
 
   window.addEventListener("resize", () => {
     state.editor?.instance?.layout?.();
-  });
-
-  refs.sessionForm.addEventListener("submit", async (event) => {
-    event.preventDefault();
-    await handleConnect(refs);
   });
 
   refs.disconnectButton.addEventListener("click", () => {
@@ -38,7 +33,6 @@ export async function initializeCollaborationScreen() {
   const params = new URLSearchParams(window.location.search);
   const sid = params.get("sessionId");
   if (sid) {
-    refs.sessionInput.value = sid;
     await handleConnect(refs);
   }
 }
@@ -49,11 +43,12 @@ async function handleConnect(refs) {
     return;
   }
 
-  const sessionId = refs.sessionInput.value.trim();
-  if (!sessionId) {
-    updateStatus(refs, "Session ID is required", "error");
-    return;
-  }
+  // Determine sessionId from querystring (preferred) or optional input
+  const params = new URLSearchParams(window.location.search);
+  const sessionIdFromQuery = params.get("sessionId");
+  const sessionIdFromInput = refs.sessionInput?.value?.trim?.() || "";
+  const sessionId = sessionIdFromQuery || sessionIdFromInput;
+  if (!sessionId) return;
 
   const user = await resolveUserSession();
   if (!user) {
@@ -61,7 +56,6 @@ async function handleConnect(refs) {
     return;
   }
 
-  updateStatus(refs, "Connecting to session...", "info");
   setConnectionState(refs, { connected: true });
 
   let socket;
@@ -86,13 +80,6 @@ async function handleConnect(refs) {
       },
       onParticipants: (participants) => {
         renderParticipants(refs, participants);
-        if (Array.isArray(participants)) {
-          if (participants.length >= 2) {
-            updateStatus(refs, "Paired: both collaborators connected", "success");
-          } else if (participants.length === 1) {
-            updateStatus(refs, "Waiting for collaborator...", "info");
-          }
-        }
       },
       onCursorEvent: (evt) => {
         state.realtime?.onRemoteCursor?.(evt);
@@ -101,11 +88,11 @@ async function handleConnect(refs) {
         state.realtime?.onRemoteEvent?.(evt);
       },
       onError: (message) => {
-        updateStatus(refs, message, "error");
+        console.error(message);
         handleDisconnect(refs, { manual: false });
       },
       onDisconnect: (reason) => {
-        updateStatus(refs, `Disconnected (${reason})`, "warning");
+        console.warn(`Disconnected (${reason})`);
         handleDisconnect(refs, { manual: false });
       },
     });
