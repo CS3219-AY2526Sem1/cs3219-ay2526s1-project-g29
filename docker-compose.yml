@@ -84,6 +84,7 @@ services:
       - MATCHING_TIMEOUT=${MATCHING_TIMEOUT:-30000}
       - COLLAB_SERVICE_URL=http://collaboration-service:${COLLAB_PORT:-8001}
       - COLLAB_INTERNAL_TOKEN=${COLLAB_INTERNAL_TOKEN}
+      - QUESTION_SERVICE_URL=http://question-service:${QUESTION_PORT:-8003}/api
     ports:
       - "${MATCHING_PORT:-8002}:${MATCHING_PORT:-8002}"
     healthcheck:
@@ -103,6 +104,8 @@ services:
       user-service:
         condition: service_healthy
       collaboration-service:
+        condition: service_healthy
+      question-service:
         condition: service_healthy
 
   # Collaboration service

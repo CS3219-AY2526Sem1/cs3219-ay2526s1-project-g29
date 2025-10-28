@@ -26,7 +26,11 @@ export function createSessionSocket({ sessionId, onReady, onParticipants, onEdit
 
       switch (data.type) {
         case "ready":
-          onReady?.({ sessionId: data.sessionId, participants: data.participants ?? [] });
+          onReady?.({
+            sessionId: data.sessionId,
+            participants: data.participants ?? [],
+            question: data.question ?? null,
+          });
           break;
         case "participants":
           onParticipants?.(data.participants ?? []);
