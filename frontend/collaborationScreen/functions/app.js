@@ -3,7 +3,7 @@ import { initializeEditor } from "./services/editor-service.js";
 import { createRealtimeSession } from "./services/realtime-service.js";
 import { createSessionSocket } from "./services/socket-service.js";
 import { resolveUserSession } from "./services/user-service.js";
-import { getDomRefs, updateStatus, renderParticipants, setConnectionState } from "./utils/dom.js";
+import { getDomRefs, updateStatus, renderParticipants, setConnectionState, renderQuestion } from "./utils/dom.js";
 
 const state = {
   editor: null,
@@ -66,6 +66,7 @@ async function handleConnect(refs) {
         state.sessionId = payload.sessionId;
         updateStatus(refs, `Connected to session ${payload.sessionId}`, "success");
         renderParticipants(refs, payload.participants ?? []);
+        renderQuestion(refs, payload.question ?? null);
 
         state.realtime = createRealtimeSession({
           sessionId: payload.sessionId,

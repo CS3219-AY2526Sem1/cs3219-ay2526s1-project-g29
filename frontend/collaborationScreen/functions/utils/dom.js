@@ -50,3 +50,33 @@ export function setConnectionState(refs, { connected }) {
   if (refs.sessionInput) refs.sessionInput.disabled = connected;
   refs.disconnectButton.disabled = !connected;
 }
+
+export function renderQuestion(refs, question) {
+  if (!refs.questionContainer) return;
+  const el = refs.questionContainer;
+  el.innerHTML = "";
+  if (!question) {
+    const p = document.createElement('p');
+    p.className = 'question-placeholder';
+    p.textContent = 'Question will appear here.';
+    el.appendChild(p);
+    return;
+  }
+  const topics = Array.isArray(question.topics) ? question.topics.join(', ') : '';
+  el.innerHTML = `
+    <div class="question-meta">
+      <div class="question-topics">${topics}</div>
+      <div class="question-title"><strong>${escapeHtml(question.title ?? '')}</strong></div>
+    </div>
+    <div class="question-description">${escapeHtml(question.description ?? '')}</div>
+  `;
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}

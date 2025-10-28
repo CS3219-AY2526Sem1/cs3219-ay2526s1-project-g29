@@ -77,9 +77,17 @@ export function attachWebsocket(server) {
 
     // Notify others of join
     broadcast(sessionId, { type: 'presence', event: 'join', user: { id: user.id, username: user.username } }, ws);
-    // Send ready + participants list to the newly connected user
+    // Send ready + participants + question to the newly connected user
     try {
-      ws.send(JSON.stringify({ type: 'ready', sessionId, participants: result.session.participants }));
+      const latest = getSession(sessionId);
+      ws.send(
+        JSON.stringify({
+          type: 'ready',
+          sessionId,
+          participants: latest?.participants ?? result.session.participants,
+          question: latest?.question ?? null,
+        })
+      );
     } catch {}
     // Broadcast updated participants list to everyone
     broadcast(sessionId, { type: 'participants', participants: result.session.participants });

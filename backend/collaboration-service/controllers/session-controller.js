@@ -13,7 +13,7 @@ export function matchFoundHandler(req, res) {
     return res.status(401).json({ message: 'Unauthorized' });
   }
 
-  const { sessionId, users, id: legacyId, participants: legacyParticipants } = req.body || {};
+  const { sessionId, users, id: legacyId, participants: legacyParticipants, question } = req.body || {};
   const id = sessionId ?? legacyId;
   const participants = users ?? legacyParticipants;
 
@@ -21,7 +21,7 @@ export function matchFoundHandler(req, res) {
     return res.status(400).json({ message: 'id is required' });
   }
 
-  const result = createSessionWithId(id, participants);
+  const result = createSessionWithId(id, participants, question);
   if (result.error === 'exists') {
     return res.status(200).json({ session: toPublicSession(result.session), created: false });
   }

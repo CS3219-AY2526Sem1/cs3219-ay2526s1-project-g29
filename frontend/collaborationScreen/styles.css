@@ -117,6 +117,28 @@
   color: #ffffff;
 }
 
+.question-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.question-topics {
+  color: #cbd5e0;
+  font-size: 0.9rem;
+}
+
+.question-title {
+  color: #ffffff;
+  font-size: 1.1rem;
+}
+
+.question-description {
+  color: rgba(255,255,255,0.9);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}
+
 #statusText {
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.5;
