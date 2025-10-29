@@ -91,51 +91,18 @@ function createActionButton(latestCode) {
 
 function showCodeModal(code) {
     const modal = document.createElement('div');
-    modal.style.cssText = `
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0,0,0,0.8);
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        z-index: 1000;
-    `;
+    modal.className = 'history-code-modal';
 
     const content = document.createElement('div');
-    content.style.cssText = `
-        background: #1e1e1e;
-        padding: 30px;
-        border-radius: 8px;
-        max-width: 800px;
-        max-height: 80vh;
-        overflow: auto;
-        position: relative;
-    `;
+    content.className = 'history-code-modal-content';
 
     const closeBtn = document.createElement('button');
+    closeBtn.className = 'history-code-modal-close';
     closeBtn.textContent = '×';
-    closeBtn.style.cssText = `
-        position: absolute;
-        top: 10px;
-        right: 15px;
-        background: none;
-        border: none;
-        color: white;
-        font-size: 30px;
-        cursor: pointer;
-    `;
     closeBtn.onclick = () => modal.remove();
 
     const codeBlock = document.createElement('pre');
-    codeBlock.style.cssText = `
-        color: #d4d4d4;
-        font-family: 'Courier New', monospace;
-        white-space: pre-wrap;
-        margin: 0;
-    `;
+    codeBlock.className = 'history-code-modal-pre';
     codeBlock.textContent = code || '// No code saved';
 
     content.appendChild(closeBtn);
