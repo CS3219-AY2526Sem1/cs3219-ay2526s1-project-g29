@@ -143,18 +143,36 @@ function handleWebSocketMessage(data) {
     }
 }
 
-// Match Success Handler
+// Match Timeout Handler
+function handleMatchTimeout() {
+    resetMatchState();
+    showMessage("No suitable match found within 2 minutes. Please try again with different criteria.", "error");
+}
+
+// Enhanced Match Success Handler with quality feedback
 function handleMatchSuccess(data) {
     resetMatchState();
     
-    showMessage("Match found! Redirecting to collaboration...", "success");
+    // Show match quality feedback
+    let qualityMessage = "Match found!";
+    if (data.matchQuality === 'excellent') {
+        qualityMessage = "🎯 Excellent match found!";
+    } else if (data.matchQuality === 'good') {
+        qualityMessage = "👍 Good match found!";
+    } else if (data.matchQuality === 'acceptable') {
+        qualityMessage = "✅ Compatible match found!";
+    }
     
-    // Store match data for collaboration screen
+    showMessage(`${qualityMessage} Redirecting to collaboration...`, "success");
+    
+    // Store enhanced match data
     sessionStorage.setItem("currentMatch", JSON.stringify({
         sessionId: data.sessionId,
         partnerId: data.partnerId,
         matchedTopics: data.matchedTopics,
         difficulty: data.difficulty,
+        matchQuality: data.matchQuality,
+        skillDifference: data.skillDifference
     }));
     
     // Redirect to collaboration screen with sessionId
@@ -162,12 +180,6 @@ function handleMatchSuccess(data) {
         const url = `${config.routes.collaboration}?sessionId=${encodeURIComponent(data.sessionId)}`;
         navigateTo(url);
     }, 1500);
-}
-
-// Match Timeout Handler
-function handleMatchTimeout() {
-    resetMatchState();
-    showMessage("No match found. Please try again.", "error");
 }
 
 // Reset Match State
