@@ -29,7 +29,7 @@ export const config = {
     settings: {
         messageTimeout: 5000,
         matchTimeout: 30000,
-        maxTopics: 16,
+        maxTopics: 19,
     },
 
     // Validation Rules
