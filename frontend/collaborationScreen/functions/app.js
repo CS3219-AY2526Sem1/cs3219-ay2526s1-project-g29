@@ -4,6 +4,7 @@ import { createRealtimeSession } from "./services/realtime-service.js";
 import { createSessionSocket } from "./services/socket-service.js";
 import { resolveUserSession } from "./services/user-service.js";
 import { getDomRefs, updateStatus, renderParticipants, setConnectionState, renderQuestion } from "./utils/dom.js";
+import { showMessage } from "./utils/message.js";
 
 const state = {
   editor: null,
@@ -143,10 +144,13 @@ async function handleDisconnect(refs, { manual }) {
 
   updateStatus(refs, manual ? "Disconnected" : "Connection closed", manual ? "info" : "warning");
 
-  // If the user clicked Disconnect, navigate back to dashboard
+  // If the user clicked Disconnect, show message then navigate back to dashboard
   if (manual) {
     try {
-      window.location.href = COLLAB_CONFIG.routes.dashboard;
+      showMessage("Left session, redirecting to dashboard...", "success");
+      setTimeout(() => {
+        window.location.href = COLLAB_CONFIG.routes.dashboard;
+      }, 1500);
     } catch {}
   }
 }
