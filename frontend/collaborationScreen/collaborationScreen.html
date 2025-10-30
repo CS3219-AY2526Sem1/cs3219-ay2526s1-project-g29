@@ -13,10 +13,6 @@
     <div class="collab-layout">
       <header class="collab-header">
         <div class="logo">PeerPrep</div>
-        <nav class="collab-nav">
-          <a href="../dashboardScreen/dashboardScreen.html" class="nav-link">Dashboard</a>
-          <a href="../historyScreen/historyScreen.html" class="nav-link">History</a>
-        </nav>
       </header>
 
       <main class="collab-content">
@@ -39,6 +35,10 @@
           <div id="editorContainer" class="editor-container"></div>
         </section>
       </main>
+      
+      <div id="messageContainer" class="message-container hidden">
+        <div id="messageText" class="message-text"></div>
+      </div>
     </div>
 
     <script type="module" src="functions/main.js"></script>
