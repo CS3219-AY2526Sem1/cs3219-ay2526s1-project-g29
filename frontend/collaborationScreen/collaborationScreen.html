@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PeerPrep - Collaboration</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg" />
+    <link rel="stylesheet" href="../shared/sharedStyles.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js" defer></script>
+  </head>
+  <body>
+    <div class="collab-layout">
+      <header class="collab-header">
+        <div class="logo">PeerPrep</div>
+      </header>
+
+      <main class="collab-content">
+        <section class="session-panel">
+          <div class="question-card">
+            <div id="questionContainer" class="question-container"></div>
+          </div>
+
+          <div class="participants-card">
+            <h3>Participants</h3>
+            <ul id="participantsList" class="participants-list"></ul>
+          </div>
+
+          <button type="button" class="disconnect-btn" id="disconnectBtn" disabled>
+            Disconnect
+          </button>
+        </section>
+
+        <section class="editor-panel">
+          <div id="editorContainer" class="editor-container"></div>
+        </section>
+      </main>
+      
+      <div id="messageContainer" class="message-container hidden">
+        <div id="messageText" class="message-text"></div>
+      </div>
+    </div>
+
+    <script type="module" src="functions/main.js"></script>
+  </body>
+</html>

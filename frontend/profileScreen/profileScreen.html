@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PeerPrep - Profile</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+    <link rel="stylesheet" href="../shared/sharedStyles.css">
+    <link rel="stylesheet" href="profileScreenStyles.css">
+  </head>
+  <body>
+    <!-- Navigation Header -->
+    <div class="header">
+      <div class="nav-tabs">
+        <a
+          href="../profileScreen/profileScreen.html"
+          class="nav-tab active"
+          id="profileTab"
+          >Profile</a
+        >
+        <a href="../matchScreen/matchScreen.html" class="nav-tab" id="matchTab"
+          >Match</a
+        >
+        <a
+          href="../historyScreen/historyScreen.html"
+          class="nav-tab"
+          id="historyTab"
+          >History</a
+        >
+      </div>
+
+      <div class="logo">PeerPrep</div>
+
+      <div class="user-menu">
+        <div class="user-avatar" id="userAvatar">
+          <i class="user-icon">👤</i>
+        </div>
+        <div class="dropdown-menu" id="dropdownMenu">
+          <a
+            href="../dashboardScreen/dashboardScreen.html"
+            class="dropdown-item"
+            >Dashboard</a
+          >
+          <a
+            href="../loginScreen/loginScreen.html"
+            class="dropdown-item"
+            id="logoutBtn"
+            >Logout</a
+          >
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Content -->
+    <div class="profile-container">
+
+      <!-- Stats Section -->
+      <div class="stats-section">
+        <!-- Progress Circle -->
+        <div class="progress-container">
+          <div class="progress-chart">
+            <svg class="progress-ring" width="200" height="200">
+              <circle class="progress-ring-background" />
+              <circle class="progress-ring-easy" id="easyProgress" />
+              <circle class="progress-ring-medium" id="mediumProgress" />
+              <circle class="progress-ring-hard" id="hardProgress" />
+            </svg>
+            <div class="progress-text">
+              <div class="progress-number" id="totalQuestions">0</div>
+              <div class="progress-label">Questions<br />Completed</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Stats Legend -->
+        <div class="stats-legend">
+          <div class="legend-item">
+            <div class="legend-dot easy"></div>
+            <span class="legend-text" id="easyCount">0 Easy</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot medium"></div>
+            <span class="legend-text" id="mediumCount">0 Medium</span>
+          </div>
+          <div class="legend-item">
+            <div class="legend-dot hard"></div>
+            <span class="legend-text" id="hardCount">0 Hard</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Account Information -->
+      <div class="profile-info">
+        <div class="info-card">
+          <div class="info-card-header">
+            <h3>Account Information</h3>
+            <button class="edit-profile-btn" id="editProfileBtn">
+                Edit
+              </button>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Username:</span>
+            <span class="info-value" id="username">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Email:</span>
+            <span class="info-value" id="email">-</span>
+          </div>
+          <div class="info-item">
+            <span class="info-label">Member since:</span>
+            <span class="info-value" id="memberSince">-</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-overlay" id="editModal">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>Edit Profile</h2>
+          <button class="close-btn" id="closeModalBtn">&times;</button>
+        </div>
+        <div class="modal-body">
+          <div class="success-message" id="successMessage">
+            Profile updated successfully!
+          </div>
+
+          <form id="editProfileForm">
+            <div class="form-group">
+              <label for="editUsername">Username</label>
+              <input
+                type="text"
+                id="editUsername"
+                name="username"
+                placeholder="Enter new username"
+              />
+              <small>Leave blank to keep current username</small>
+              <div class="error-message" id="usernameError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="editEmail">Email</label>
+              <input
+                type="email"
+                id="editEmail"
+                name="email"
+                placeholder="Enter new email"
+              />
+              <small>Leave blank to keep current email</small>
+              <div class="error-message" id="emailError"></div>
+            </div>
+
+            <div class="form-group">
+              <label for="editPassword">New Password</label>
+              <input
+                type="password"
+                id="editPassword"
+                name="password"
+                placeholder="Enter new password"
+              />
+              <small>Leave blank to keep current password. Must be at least 8 characters.</small>
+              <div class="error-message" id="passwordError"></div>
+            </div>
+
+            <!-- Not sure if skill level is adjustable? -->
+            <!-- <div class="form-group">
+              <label for="editSkillLevel">Skill Level</label>
+              <select id="editSkillLevel" name="skillLevel">
+                <option value="">Keep current</option>
+                <option value="low">low</option>
+                <option value="medium">medium</option>
+                <option value="high">high</option>
+              </select>
+            </div> -->
+          </form>
+        </div>
+        <div class="modal-footer">
+          <button class="btn btn-secondary" id="cancelBtn">Cancel</button>
+          <button class="btn btn-primary" id="saveBtn">
+            Save Changes
+            <span class="loading" id="loadingSpinner">
+              <span class="spinner"></span>
+            </span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="functions/app.js"></script>
+  </body>
+</html>

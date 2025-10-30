@@ -1,0 +1,24 @@
+{
+  "name": "frontend",
+  "version": "1.0.0",
+  "description": "PeerPrep Frontend",
+  "main": "index.html",
+  "scripts": {
+    "start": "npx http-server . -p 3000 -c-1",
+    "dev": "npm run build:collab && npx http-server . -p 3000 -c-1 -o",
+    "build:collab": "npx esbuild collaborationScreen/functions/main.js --bundle --format=esm --sourcemap --outfile=collaborationScreen/dist/main.bundle.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "peerprep",
+    "frontend",
+    "login"
+  ],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "esbuild": "^0.25.11",
+    "http-server": "^14.1.1"
+  },
+  "dependencies": {}
+}
