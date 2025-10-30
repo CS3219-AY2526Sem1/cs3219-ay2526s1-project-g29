@@ -142,4 +142,11 @@ async function handleDisconnect(refs, { manual }) {
   renderParticipants(refs, []);
 
   updateStatus(refs, manual ? "Disconnected" : "Connection closed", manual ? "info" : "warning");
+
+  // If the user clicked Disconnect, navigate back to dashboard
+  if (manual) {
+    try {
+      window.location.href = COLLAB_CONFIG.routes.dashboard;
+    } catch {}
+  }
 }
