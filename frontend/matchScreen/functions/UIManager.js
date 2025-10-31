@@ -75,6 +75,142 @@ export function updateFindMatchButton() {
     }
 }
 
+// Confirmation Dialog Management
+export function showConfirmationDialog(matchData) {
+    if (!elements.confirmationDialog) {
+        createConfirmationDialog();
+    }
+    
+    // Update dialog content
+    const partnerInfo = elements.confirmationDialog.querySelector('#partnerUserId');
+    const matchDetails = elements.confirmationDialog.querySelector('#matchDetails');
+    const qualityBadge = elements.confirmationDialog.querySelector('#qualityBadge');
+    
+    if (partnerInfo) {
+        partnerInfo.textContent = matchData.partnerId;
+    }
+    
+    if (matchDetails) {
+        matchDetails.innerHTML = `
+            <p><strong>Topics:</strong> ${matchData.matchedTopics.join(', ')}</p>
+            <p><strong>Difficulty:</strong> ${matchData.difficulty}</p>
+            <p><strong>Skill Difference:</strong> ${matchData.skillDifference}</p>
+        `;
+    }
+    
+    if (qualityBadge) {
+        qualityBadge.textContent = matchData.matchQuality;
+        qualityBadge.className = `quality-badge ${matchData.matchQuality}`;
+    }
+    
+    // Show dialog
+    elements.confirmationDialog.classList.remove('hidden');
+    elements.confirmationDialog.classList.add('show');
+    
+    // Start countdown
+    startConfirmationCountdown(matchData.timeToConfirm);
+}
+
+export function hideConfirmationDialog() {
+    if (elements.confirmationDialog) {
+        elements.confirmationDialog.classList.remove('show');
+        elements.confirmationDialog.classList.add('hidden');
+        stopConfirmationCountdown();
+    }
+}
+
+export function updateConfirmationDialog(message) {
+    if (elements.confirmationDialog) {
+        const statusMessage = elements.confirmationDialog.querySelector('#confirmationStatus');
+        if (statusMessage) {
+            statusMessage.textContent = message;
+        }
+    }
+}
+
+function createConfirmationDialog() {
+    const dialog = document.createElement('div');
+    dialog.id = 'confirmationDialog';
+    dialog.className = 'confirmation-dialog hidden';
+    
+    dialog.innerHTML = `
+        <div class="confirmation-card">
+            <div class="confirmation-header">
+                <h2>Match Found!</h2>
+                <div id="qualityBadge" class="quality-badge">good</div>
+            </div>
+            
+            <div class="confirmation-content">
+                <div class="partner-info">
+                    <h3>Partner Information</h3>
+                    <p><strong>User ID:</strong> <span id="partnerUserId">loading...</span></p>
+                    <div id="matchDetails">
+                        <!-- Match details will be inserted here -->
+                    </div>
+                </div>
+                
+                <div class="confirmation-status">
+                    <p id="confirmationStatus">Do you want to start a coding session with this partner?</p>
+                    <div class="countdown">
+                        <span>Time remaining: </span>
+                        <span id="countdownTimer">30</span>
+                        <span> seconds</span>
+                    </div>
+                </div>
+                
+                <div class="confirmation-actions">
+                    <button type="button" class="btn-reject" id="rejectMatchBtn">
+                        ❌ Reject
+                    </button>
+                    <button type="button" class="btn-accept" id="acceptMatchBtn">
+                        ✅ Accept
+                    </button>
+                </div>
+            </div>
+        </div>
+    `;
+    
+    document.body.appendChild(dialog);
+    
+    // Add event listeners
+    dialog.querySelector('#acceptMatchBtn').addEventListener('click', () => {
+        import('./eventHandlers.js').then(module => module.handleAcceptMatch());
+    });
+    
+    dialog.querySelector('#rejectMatchBtn').addEventListener('click', () => {
+        import('./eventHandlers.js').then(module => module.handleRejectMatch());
+    });
+    
+    elements.confirmationDialog = dialog;
+}
+
+let countdownInterval;
+
+function startConfirmationCountdown(timeMs) {
+    let timeLeft = Math.floor(timeMs / 1000);
+    const countdownElement = document.getElementById('countdownTimer');
+    
+    if (countdownElement) {
+        countdownElement.textContent = timeLeft;
+        
+        countdownInterval = setInterval(() => {
+            timeLeft--;
+            countdownElement.textContent = timeLeft;
+            
+            if (timeLeft <= 0) {
+                stopConfirmationCountdown();
+            }
+        }, 1000);
+    }
+}
+
+function stopConfirmationCountdown() {
+    if (countdownInterval) {
+        clearInterval(countdownInterval);
+        countdownInterval = null;
+    }
+}
+
 // Form Validation Feedback
 export function showValidationError(field, message) {
     field.classList.add("error");

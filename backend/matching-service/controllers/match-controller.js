@@ -1,6 +1,6 @@
 import { getChannel, MATCH_REQUEST_QUEUE } from "../utils/rabbitmq.js";
 import { validateMatchRequest, getSessionData } from "../models/match-model.js";
-import { cancelMatchRequest } from "../services/match-processor.js";
+import { cancelMatchRequest, confirmMatch } from "../services/match-processor.js";
 import { notifyUser } from "../middleware/ws-server.js";
 
 export async function requestMatch(req, res) {
@@ -109,4 +109,32 @@ export async function getSession(req, res) {
   }
   
   return res.json(session);
+}
+
+export async function confirmMatchHandler(req, res) {
+  const { userId, sessionId, accepted } = req.body;
+  
+  if (!userId || !sessionId || typeof accepted !== 'boolean') {
+    return res.status(400).json({ 
+      error: "userId, sessionId, and accepted (boolean) are required" 
+    });
+  }
+  
+  try {
+    const result = confirmMatch(userId, sessionId, accepted);
+    
+    if (result.error) {
+      return res.status(404).json({ error: result.error });
+    }
+    
+    return res.json({
+      message: "Match confirmation processed",
+      status: result.status,
+      accepted
+    });
+    
+  } catch (error) {
+    console.error("Error confirming match:", error);
+    return res.status(500).json({ error: "Failed to process match confirmation" });
+  }
 }

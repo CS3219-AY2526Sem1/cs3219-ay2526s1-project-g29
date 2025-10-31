@@ -26,7 +26,15 @@ export function attachWebsocket(server) {
 
 export function notifyUser(userId, payload) {
   const ws = wsConnections[userId];
+  console.log(`Attempting to notify user ${userId}. Connected: ${!!ws}, Ready: ${ws?.readyState === 1}`);
+  
   if (ws && ws.readyState === ws.OPEN) {
-    ws.send(JSON.stringify(payload));
+    const message = JSON.stringify(payload);
+    console.log(`Sending WebSocket message to ${userId}: ${message}`);
+    ws.send(message);
+    return true;
+  } else {
+    console.warn(`User ${userId} not connected via WebSocket or connection not ready`);
+    return false;
   }
 }

@@ -41,3 +41,24 @@ export async function cancelMatch(userId) {
         throw error;
     }
 }
+
+export async function confirmMatch(userId, sessionId, accepted) {
+    try {
+        const response = await fetch(`${config.api.matchingService}/confirm`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ userId, sessionId, accepted }),
+        });
+
+        const data = await response.json();
+
+        if (!response.ok) {
+            throw new Error(data.error || "Failed to confirm match");
+        }
+
+        return data;
+    } catch (error) {
+        console.error("Confirm match error:", error);
+        throw error;
+    }
+}
