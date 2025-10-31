@@ -698,3 +698,143 @@
 .message-container.hidden {
     display: none !important;
 }
+
+/* Confirmation Dialog */
+.confirmation-dialog {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.9);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    backdrop-filter: blur(10px);
+}
+
+.confirmation-dialog.show {
+    display: flex !important;
+}
+
+.confirmation-card {
+    background: linear-gradient(135deg, var(--primary-color, #4c51bf) 0%, var(--primary-dark, #553c9a) 100%);
+    border-radius: 20px;
+    padding: 3rem;
+    max-width: 500px;
+    width: 90%;
+    text-align: center;
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+    animation: modalSlideIn 0.4s ease-out;
+}
+
+.confirmation-header {
+    margin-bottom: 2rem;
+}
+
+.confirmation-header h2 {
+    color: white;
+    font-size: 2rem;
+    margin-bottom: 1rem;
+}
+
+.quality-badge {
+    display: inline-block;
+    padding: 0.5rem 1rem;
+    border-radius: 20px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.quality-badge.excellent {
+    background: #10b981;
+    color: white;
+}
+
+.quality-badge.good {
+    background: #3b82f6;
+    color: white;
+}
+
+.quality-badge.acceptable {
+    background: #f59e0b;
+    color: white;
+}
+
+.confirmation-content {
+    color: white;
+}
+
+.partner-info {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 12px;
+    padding: 1.5rem;
+    margin-bottom: 1.5rem;
+    text-align: left;
+}
+
+.partner-info h3 {
+    margin-bottom: 1rem;
+    color: white;
+}
+
+.confirmation-status {
+    margin-bottom: 2rem;
+}
+
+.countdown {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #fbbf24;
+    margin-top: 0.5rem;
+}
+
+.confirmation-actions {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+}
+
+.btn-accept, .btn-reject {
+    padding: 1rem 2rem;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    min-width: 130px;
+}
+
+.btn-accept {
+    background: linear-gradient(135deg, #10b981, #059669);
+    color: white;
+}
+
+.btn-accept:hover {
+    background: linear-gradient(135deg, #059669, #047857);
+    transform: translateY(-2px);
+}
+
+.btn-reject {
+    background: linear-gradient(135deg, #ef4444, #dc2626);
+    color: white;
+}
+
+.btn-reject:hover {
+    background: linear-gradient(135deg, #dc2626, #b91c1c);
+    transform: translateY(-2px);
+}
+
+@media (max-width: 768px) {
+    .confirmation-card {
+        padding: 2rem;
+        margin: 1rem;
+    }
+    
+    .confirmation-actions {
+        flex-direction: column;
+    }
+}

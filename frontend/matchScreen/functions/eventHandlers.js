@@ -8,6 +8,7 @@ import { showMessage, showMatchingStatus, hideMatchingStatus, updateFindMatchBut
 // User Session State
 let currentUser = null;
 let matchRequestActive = false;
+let pendingConfirmation = null;
 
 export function setUserData(userId, profile) {
     currentUser = { userId, profile };
@@ -129,6 +130,26 @@ function handleWebSocketMessage(data) {
         case "MATCHED":
             handleMatchSuccess(data);
             break;
+        
+        case "MATCH_FOUND":
+            handleMatchFound(data);
+            break;
+            
+        case "PARTNER_CONFIRMED":
+            handlePartnerConfirmed(data);
+            break;
+            
+        case "MATCH_CONFIRMED":
+            handleMatchConfirmed(data);
+            break;
+            
+        case "MATCH_REJECTED":
+            handleMatchRejected(data);
+            break;
+            
+        case "CONFIRMATION_TIMEOUT":
+            handleConfirmationTimeout(data);
+            break;
             
         case "MATCH_TIMEOUT":
             handleMatchTimeout();
@@ -143,10 +164,70 @@ function handleWebSocketMessage(data) {
     }
 }
 
+function handleMatchFound(data) {
+    hideMatchingStatus();
+    pendingConfirmation = data;
+    showConfirmationDialog(data);
+}
+
+function handlePartnerConfirmed(data) {
+    updateConfirmationDialog("Your partner has accepted! Waiting for your confirmation...");
+}
+
+function handleMatchConfirmed(data) {
+    hideConfirmationDialog();
+    handleMatchSuccess(data); // Use existing success handler
+}
+
+function handleMatchRejected(data) {
+    hideConfirmationDialog();
+    pendingConfirmation = null;
+    showMessage(data.message, "info");
+    // Continue searching
+    showMatchingStatus("Continuing search for another match...");
+}
+
+function handleConfirmationTimeout(data) {
+    hideConfirmationDialog();
+    pendingConfirmation = null;
+    showMessage("Match confirmation timed out. Continuing search...", "warning");
+    showMatchingStatus("Searching for another match...");
+}
+
 // Match Timeout Handler
 function handleMatchTimeout() {
     resetMatchState();
     showMessage("No suitable match found within 2 minutes. Please try again with different criteria.", "error");
+}
+
+// Confirmation actions
+export async function handleAcceptMatch() {
+    if (!pendingConfirmation || !currentUser) return;
+    
+    try {
+        await confirmMatch(currentUser.userId, pendingConfirmation.sessionId, true);
+        updateConfirmationDialog("Match accepted! Waiting for partner confirmation...");
+        
+    } catch (error) {
+        console.error("Error accepting match:", error);
+        showMessage("Failed to accept match", "error");
+    }
+}
+
+export async function handleRejectMatch() {
+    if (!pendingConfirmation || !currentUser) return;
+    
+    try {
+        await confirmMatch(currentUser.userId, pendingConfirmation.sessionId, false);
+        hideConfirmationDialog();
+        pendingConfirmation = null;
+        showMessage("Match rejected. Continuing search...", "info");
+        showMatchingStatus("Searching for another match...");
+        
+    } catch (error) {
+        console.error("Error rejecting match:", error);
+        showMessage("Failed to reject match", "error");
+    }
 }
 
 // Enhanced Match Success Handler with quality feedback
