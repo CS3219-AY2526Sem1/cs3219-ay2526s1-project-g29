@@ -1,9 +1,9 @@
 import { elements } from "./elements.js";
 import { config } from "./config.js";
 import { logout } from "./auth.js";
-import { requestMatch, cancelMatch } from "./matching.js";
+import { requestMatch, cancelMatch, confirmMatch } from "./matching.js";
 import { connectWebSocket, disconnectWebSocket } from "./websocket.js";
-import { showMessage, showMatchingStatus, hideMatchingStatus, updateFindMatchButton } from "./UIManager.js";
+import { showMessage, showMatchingStatus, hideMatchingStatus, updateFindMatchButton, showConfirmationDialog, hideConfirmationDialog, updateConfirmationDialog } from "./UIManager.js";
 
 // User Session State
 let currentUser = null;
@@ -128,39 +128,47 @@ function handleWebSocketMessage(data) {
             break;
             
         case "MATCHED":
+            console.log("Received MATCHED (old flow)");
             handleMatchSuccess(data);
             break;
         
         case "MATCH_FOUND":
+            console.log("Received MATCH_FOUND - showing confirmation dialog");
             handleMatchFound(data);
             break;
             
         case "PARTNER_CONFIRMED":
+            console.log("Partner confirmed match");
             handlePartnerConfirmed(data);
             break;
             
         case "MATCH_CONFIRMED":
+            console.log("Both users confirmed - proceeding to collaboration");
             handleMatchConfirmed(data);
             break;
             
         case "MATCH_REJECTED":
+            console.log("Match was rejected");
             handleMatchRejected(data);
             break;
             
         case "CONFIRMATION_TIMEOUT":
+            console.log("Match confirmation timed out");
             handleConfirmationTimeout(data);
             break;
             
         case "MATCH_TIMEOUT":
+            console.log("Overall match search timed out");
             handleMatchTimeout();
             break;
             
         case "CANCELLED":
+            console.log("Match search cancelled");
             resetMatchState();
             break;
             
         default:
-            console.log("Unknown message type:", data.type);
+            console.warn("Unknown WebSocket message type:", data.type);
     }
 }
 

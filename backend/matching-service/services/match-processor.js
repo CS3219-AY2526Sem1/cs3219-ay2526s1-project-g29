@@ -204,23 +204,22 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
   // Set confirmation timeout
   setConfirmationTimeout(session.sessionId);
   
-  // Notify both users about potential match (not final match)
-  notifyUser(userId, {
+  // Notify both users of potential match (not final match)
+  const user1Notification = {
     type: "MATCH_FOUND",
     sessionId: session.sessionId,
     partnerId: partner.userId,
     partnerInfo: {
       userId: partner.userId,
-      // Don't expose sensitive info, just basic match details
     },
     matchedTopics: commonTopics,
     difficulty,
     matchQuality: quality,
     skillDifference: skillDiff,
     timeToConfirm: CONFIRMATION_TIMEOUT_MS
-  });
+  };
   
-  notifyUser(partner.userId, {
+  const user2Notification = {
     type: "MATCH_FOUND",
     sessionId: session.sessionId,
     partnerId: userId,
@@ -232,7 +231,14 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
     matchQuality: quality,
     skillDifference: skillDiff,
     timeToConfirm: CONFIRMATION_TIMEOUT_MS
-  });
+  };
+  
+  console.log(`Sending MATCH_FOUND to user ${userId}:`, user1Notification);
+  console.log(`Sending MATCH_FOUND to user ${partner.userId}:`, user2Notification);
+  
+  // Send notifications
+  notifyUser(userId, user1Notification);
+  notifyUser(partner.userId, user2Notification);
 }
 
 // Periodic matching for delayed matches
