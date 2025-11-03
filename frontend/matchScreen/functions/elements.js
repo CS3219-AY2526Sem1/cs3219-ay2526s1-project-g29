@@ -9,6 +9,7 @@ export const elements = {
     // Status Elements
     matchingStatus: document.getElementById("matchingStatus"),
     statusMessage: document.getElementById("statusMessage"),
+    confirmationDialog: null,
 
     // Message Elements
     messageContainer: document.getElementById("messageContainer"),
