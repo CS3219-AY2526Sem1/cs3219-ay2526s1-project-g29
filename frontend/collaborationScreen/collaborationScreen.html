@@ -32,10 +32,59 @@
         </section>
 
         <section class="editor-panel">
+          <div class="editor-header">
+            <div class="editor-actions">
+              <button
+                type="button"
+                class="ai-explain-btn"
+                id="aiExplainBtn"
+                title="Explain selected code with AI"
+              >
+                ✨ Explain Code
+              </button>
+            </div>
+          </div>
           <div id="editorContainer" class="editor-container"></div>
         </section>
+
+        <aside class="ai-panel" id="aiPanel">
+          <div class="ai-panel-header">
+            <h3>AI Assistant</h3>
+            <button
+              type="button"
+              class="close-btn"
+              id="aiCloseBtn"
+              title="Close AI panel"
+            >
+              ×
+            </button>
+          </div>
+          <div class="ai-panel-content">
+            <div id="aiOutput" class="ai-output"> 
+              <!-- Default state -->
+              <div class="ai-placeholder">
+                Select code in the editor and click "Explain Code" to get AI
+                assistance.
+              </div>
+
+              <!-- Loading state -->
+              <div class="ai-loading" style="display: none">
+                <div class="ai-loading-spinner"></div>
+                <div>Generating explanation...</div>
+              </div>
+
+              <!-- Error state -->
+              <div class="ai-error" style="display: none">
+                <strong>Error:</strong> <span class="ai-error-message"></span>
+              </div>
+
+              <!-- Explanation state -->
+              <div class="ai-explanation" style="display: none"></div>
+            </div>
+          </div>
+        </aside>
       </main>
-      
+
       <div id="messageContainer" class="message-container hidden">
         <div id="messageText" class="message-text"></div>
       </div>
