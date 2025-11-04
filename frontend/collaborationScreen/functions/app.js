@@ -12,6 +12,11 @@ const state = {
   realtime: null,
   socket: null,
   sessionId: null,
+  participants: [],
+  currentUser: null,
+  partnerConnected: false,
+  partnerJoinTimer: null,
+  disconnecting: false,
 };
 
 export async function initializeCollaborationScreen() {
@@ -34,6 +39,34 @@ export async function initializeCollaborationScreen() {
   refs.disconnectButton.addEventListener("click", () => {
     handleDisconnect(refs, { manual: true });
   });
+
+  // Cross-tab logout detection via BroadcastChannel and storage events
+  try {
+    const bc = new BroadcastChannel('auth');
+    bc.onmessage = (e) => {
+      if (e?.data?.type === 'logout') {
+        handleLoggedOut(refs);
+      }
+    };
+  } catch {}
+  window.addEventListener('storage', (e) => {
+    if (e.key === 'auth:logout') {
+      handleLoggedOut(refs);
+    }
+  });
+
+  // Partner-left modal actions
+  if (refs.partnerLeftYesBtn) {
+    refs.partnerLeftYesBtn.addEventListener("click", () => {
+      hidePartnerLeftPrompt(refs);
+    });
+  }
+  if (refs.partnerLeftNoBtn) {
+    refs.partnerLeftNoBtn.addEventListener("click", () => {
+      hidePartnerLeftPrompt(refs);
+      handleDisconnect(refs, { manual: true });
+    });
+  }
 
   // Auto-connect if sessionId provided in query string
   const params = new URLSearchParams(window.location.search);
@@ -61,6 +94,7 @@ async function handleConnect(refs) {
     updateStatus(refs, "Please sign in before joining a session", "error");
     return;
   }
+  state.currentUser = user;
 
   setConnectionState(refs, { connected: true });
 
@@ -71,7 +105,8 @@ async function handleConnect(refs) {
       onReady: (payload) => {
         state.sessionId = payload.sessionId;
         updateStatus(refs, `Connected to session ${payload.sessionId}`, "success");
-        renderParticipants(refs, payload.participants ?? []);
+        state.participants = payload.participants ?? [];
+        renderParticipants(refs, state.participants);
         renderQuestion(refs, payload.question ?? null);
 
         state.realtime = createRealtimeSession({
@@ -84,9 +119,52 @@ async function handleConnect(refs) {
         try { state.realtime.sendFull(); } catch {}
 
         state.editor?.instance?.layout?.();
+
+        // Determine if partner is already connected (username populated)
+        const meId = state.currentUser?.id;
+        const other = (state.participants || []).find((p) => p.id !== meId);
+        state.partnerConnected = Boolean(other && other.username && other.username !== 'anonymous');
+
+        // Grace period for partner to join; if they don't, redirect back
+        if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+        if (!state.partnerConnected) {
+          state.partnerJoinTimer = setTimeout(() => {
+            if (!state.partnerConnected && !state.disconnecting) {
+              handleDisconnect(refs, { manual: true, message: 'Your partner left the session. Redirecting to dashboard...' });
+            }
+          }, 1500);
+        }
       },
       onParticipants: (participants) => {
-        renderParticipants(refs, participants);
+        const prev = Array.isArray(state.participants) ? state.participants : [];
+        const next = Array.isArray(participants) ? participants : [];
+
+        // Detect a participant leaving AFTER we had both connected
+        if (state.partnerConnected && prev.length > next.length && next.length >= 1) {
+          const removed = prev.find((p) => !next.some((n) => n.id === p.id));
+          const display = removed?.username || "Your partner";
+          showPartnerLeftPrompt(refs, display);
+        }
+
+        state.participants = next;
+        renderParticipants(refs, next);
+      },
+      onPresence: (evt) => {
+        if (evt?.event === 'join') {
+          const joinerId = evt?.user?.id;
+          if (joinerId && joinerId !== state.currentUser?.id) {
+            state.partnerConnected = true;
+            if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+            state.partnerJoinTimer = null;
+          }
+        }
+        if (evt?.event === 'leave') {
+          const leaverId = evt?.user?.id;
+          if (leaverId && leaverId !== state.currentUser?.id) {
+            // Partner left explicitly
+            showPartnerLeftPrompt(refs, 'Your partner');
+          }
+        }
       },
       onCursorEvent: (evt) => {
         state.realtime?.onRemoteCursor?.(evt);
@@ -100,7 +178,12 @@ async function handleConnect(refs) {
       },
       onDisconnect: (reason) => {
         console.warn(`Disconnected (${reason})`);
-        handleDisconnect(refs, { manual: false });
+        const r = String(reason || '').toLowerCase();
+        if (r.includes('partner') || r.includes('timeout') || r.includes('closed')) {
+          handleDisconnect(refs, { manual: true, message: 'Your partner left the session. Redirecting to dashboard...' });
+        } else {
+          handleDisconnect(refs, { manual: false });
+        }
       },
     });
   } catch (error) {
@@ -114,7 +197,11 @@ async function handleConnect(refs) {
   socket.connect();
 }
 
-async function handleDisconnect(refs, { manual }) {
+async function handleDisconnect(refs, { manual, message, redirectTo }) {
+  if (state.disconnecting) return;
+  state.disconnecting = true;
+  if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+  state.partnerJoinTimer = null;
   if (!state.socket) {
     setConnectionState(refs, { connected: false });
     return;
@@ -143,19 +230,42 @@ async function handleDisconnect(refs, { manual }) {
   state.socket = null;
   state.realtime = null;
   state.sessionId = null;
+  state.partnerConnected = false;
 
   setConnectionState(refs, { connected: false });
   renderParticipants(refs, []);
 
   updateStatus(refs, manual ? "Disconnected" : "Connection closed", manual ? "info" : "warning");
 
-  // If the user clicked Disconnect, show message then navigate back to dashboard
+  // If the user clicked Disconnect, show message then navigate
   if (manual) {
     try {
-      showMessage("Left session, redirecting to dashboard...", "success");
+      const msg = message || "Left session, redirecting to dashboard...";
+      showMessage(msg, "success");
       setTimeout(() => {
-        window.location.href = COLLAB_CONFIG.routes.dashboard;
+        const target = redirectTo === 'login' ? COLLAB_CONFIG.routes.login : COLLAB_CONFIG.routes.dashboard;
+        window.location.href = target;
       }, 1500);
     } catch {}
   }
+  state.disconnecting = false;
+}
+
+function showPartnerLeftPrompt(refs, displayName) {
+  if (!refs.partnerLeftModal) return;
+  const textEl = refs.partnerLeftText;
+  if (textEl) {
+    textEl.textContent = `${displayName} has left the session. Continue?`;
+  }
+  refs.partnerLeftModal.classList.remove("hidden");
+}
+
+function hidePartnerLeftPrompt(refs) {
+  if (!refs.partnerLeftModal) return;
+  refs.partnerLeftModal.classList.add("hidden");
+}
+
+function handleLoggedOut(refs) {
+  // For user A logging out in another tab while connected
+  handleDisconnect(refs, { manual: true, message: 'Session ended: you were logged out. Redirecting to login…', redirectTo: 'login' });
 }

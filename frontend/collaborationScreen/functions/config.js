@@ -6,6 +6,7 @@ export const COLLAB_CONFIG = {
   apiBase: "http://localhost:8004",
   routes: {
     dashboard: "../dashboardScreen/dashboardScreen.html",
+    login: "../loginScreen/loginScreen.html",
   },
   defaultLanguage: "javascript",
   defaultContent:

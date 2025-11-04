@@ -18,6 +18,11 @@ export function getDomRefs() {
     participantsList: getElement("participantsList"),
     editorContainer: getElement("editorContainer"),
     questionContainer: getElement("questionContainer", true),
+    // Partner-left modal
+    partnerLeftModal: getElement("partnerLeftModal", true),
+    partnerLeftText: getElement("partnerLeftText", true),
+    partnerLeftYesBtn: getElement("partnerLeftYesBtn", true),
+    partnerLeftNoBtn: getElement("partnerLeftNoBtn", true),
   };
 }
 
