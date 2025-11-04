@@ -5,6 +5,7 @@ import { createSessionSocket } from "./services/socket-service.js";
 import { resolveUserSession } from "./services/user-service.js";
 import { getDomRefs, updateStatus, renderParticipants, setConnectionState, renderQuestion } from "./utils/dom.js";
 import { showMessage } from "./utils/message.js";
+import { initializeAIPanel } from "./utils/ai-panel.js";
 
 const state = {
   editor: null,
@@ -21,6 +22,10 @@ export async function initializeCollaborationScreen() {
 
   state.editor = await initializeEditor(refs.editorContainer);
   state.editor?.instance?.layout?.();
+
+  if (state.editor?.instance) {
+    initializeAIPanel(state.editor.instance);
+  }
 
   window.addEventListener("resize", () => {
     state.editor?.instance?.layout?.();
@@ -118,8 +123,8 @@ async function handleDisconnect(refs, { manual }) {
   try {
     if (state.sessionId) {
       await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/leave`, {
-        method: "POST",
-        credentials: "include",
+          method: "POST",
+          credentials: "include",
       }).catch(() => {});
     }
     state.socket.disconnect();

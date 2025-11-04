@@ -5,6 +5,7 @@ import { createServer } from 'http';
 import { env } from './utils/env.js';
 import sessionRoutes from './routes/session-routes.js';
 import { attachWebsocket } from './middleware/ws-server.js';
+import aiRoutes from './routes/ai-routes.js';
 
 const app = express();
 
@@ -46,6 +47,7 @@ app.get('/health', (req, res) => {
 
 // API routes (internal only)
 app.use('/', sessionRoutes);
+app.use('/ai', aiRoutes);
 
 // HTTP server + WS attach
 const server = createServer(app);
