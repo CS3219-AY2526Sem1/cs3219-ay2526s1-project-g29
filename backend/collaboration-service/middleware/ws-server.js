@@ -4,6 +4,7 @@ import { env } from '../utils/env.js';
 import { getSession, addParticipant, removeParticipant, closeSession } from '../services/session-store.js';
 
 const socketsBySession = new Map(); // sessionId -> Set<ws>
+const partnerWaitTimers = new Map(); // sessionId -> Timeout
 
 function extractToken(req, urlObj) {
   // Prefer Authorization header, then cookie, then query param `token`
@@ -92,6 +93,9 @@ export function attachWebsocket(server) {
     // Broadcast updated participants list to everyone
     broadcast(sessionId, { type: 'participants', participants: result.session.participants });
 
+    // If only one unique user connected while session expects two, start a short wait timer
+    schedulePartnerWait(sessionId);
+
     ws.on('message', (msg) => {
       // Broadcast messages to the other peer(s)
       broadcast(sessionId, { type: 'message', from: user.id, payload: msg.toString() }, ws);
@@ -114,7 +118,13 @@ export function attachWebsocket(server) {
       }
 
       broadcast(sessionId, { type: 'presence', event: 'leave', user: { id: user.id } });
-      if (set.size === 0) socketsBySession.delete(sessionId);
+      if (set.size === 0) {
+        socketsBySession.delete(sessionId);
+        try { closeSession(sessionId); } catch {}
+      }
+
+      // If partner disconnects, we may need to re-evaluate wait timer
+      schedulePartnerWait(sessionId);
     });
   });
 }
@@ -139,4 +149,52 @@ function broadcast(sessionId, payload, exceptWs = null) {
   for (const client of set) {
     if (client !== exceptWs && client.readyState === client.OPEN) client.send(data);
   }
+}
+
+function schedulePartnerWait(sessionId) {
+  const set = socketsBySession.get(sessionId);
+  const s = getSession(sessionId);
+  if (!set || !s) {
+    // Nothing to do
+    const existing = partnerWaitTimers.get(sessionId);
+    if (existing) {
+      clearTimeout(existing);
+      partnerWaitTimers.delete(sessionId);
+    }
+    return;
+  }
+
+  // Compute number of unique connected users for this session
+  const uniqueUsers = new Set(Array.from(set).map((ws) => ws.userId));
+
+  // If we already have two unique users connected or the session expects fewer than 2, cancel any timer
+  if (uniqueUsers.size >= 2 || (s.participants?.length || 0) < 2) {
+    const existing = partnerWaitTimers.get(sessionId);
+    if (existing) {
+      clearTimeout(existing);
+      partnerWaitTimers.delete(sessionId);
+    }
+    return;
+  }
+
+  // Start or reset a short wait timer (3s) to allow partner to connect
+  const existing = partnerWaitTimers.get(sessionId);
+  if (existing) clearTimeout(existing);
+
+  const timer = setTimeout(() => {
+    partnerWaitTimers.delete(sessionId);
+    const latestSet = socketsBySession.get(sessionId);
+    const latestSession = getSession(sessionId);
+    if (!latestSet || !latestSession) return;
+    const uniq = new Set(Array.from(latestSet).map((ws) => ws.userId));
+    if (uniq.size < 2 && (latestSession.participants?.length || 0) >= 2) {
+      // Partner never connected; close all sockets in this session with a clear reason and close session
+      for (const ws of Array.from(latestSet)) {
+        try { ws.close(1000, 'partner timeout'); } catch {}
+      }
+      try { closeSession(sessionId); } catch {}
+    }
+  }, 1500);
+
+  partnerWaitTimers.set(sessionId, timer);
 }

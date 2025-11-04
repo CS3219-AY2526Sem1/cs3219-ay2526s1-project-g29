@@ -49,6 +49,15 @@ export async function logout() {
         if (!response.ok) {
             console.error(`Logout failed: ${response.status}`);
         }
+        try {
+            localStorage.setItem('auth:logout', String(Date.now()));
+            localStorage.removeItem('user');
+        } catch {}
+        try {
+            const bc = new BroadcastChannel('auth');
+            bc.postMessage({ type: 'logout' });
+            bc.close?.();
+        } catch {}
     } catch (error) {
         console.error("Logout error:", error);
     }

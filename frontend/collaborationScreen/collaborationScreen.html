@@ -39,6 +39,18 @@
       <div id="messageContainer" class="message-container hidden">
         <div id="messageText" class="message-text"></div>
       </div>
+
+      <!-- Partner Left Modal -->
+      <div id="partnerLeftModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="partnerLeftText">
+        <div class="modal-card">
+          <h3 class="modal-title">Session Notice</h3>
+          <p id="partnerLeftText" class="modal-text">Your partner has left the session. Continue?</p>
+          <div class="modal-actions">
+            <button type="button" id="partnerLeftYesBtn" class="btn-primary">Yes</button>
+            <button type="button" id="partnerLeftNoBtn" class="btn-primary danger">No</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="functions/main.js"></script>
