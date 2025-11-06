@@ -18,6 +18,14 @@ export function getDomRefs() {
     participantsList: getElement("participantsList"),
     editorContainer: getElement("editorContainer"),
     questionContainer: getElement("questionContainer", true),
+    // Language controls
+    languageSelect: getElement("languageSelect", true),
+    // Language change modals
+    langRequestModal: getElement("langRequestModal", true),
+    langRequestText: getElement("langRequestText", true),
+    langAcceptBtn: getElement("langAcceptBtn", true),
+    langRejectBtn: getElement("langRejectBtn", true),
+    langWaitingModal: getElement("langWaitingModal", true),
     // Partner-left modal
     partnerLeftModal: getElement("partnerLeftModal", true),
     partnerLeftText: getElement("partnerLeftText", true),

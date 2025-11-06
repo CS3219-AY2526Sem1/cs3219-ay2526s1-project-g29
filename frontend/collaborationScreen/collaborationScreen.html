@@ -33,6 +33,16 @@
 
         <section class="editor-panel">
           <div class="editor-header">
+            <div class="language-group">
+              <select id="languageSelect" class="language-select">
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="php">PHP</option>
+              </select>
+            </div>
             <div class="editor-actions">
               <button
                 type="button"
@@ -87,6 +97,24 @@
 
       <div id="messageContainer" class="message-container hidden">
         <div id="messageText" class="message-text"></div>
+      </div>
+
+      <!-- Language Change Request -->
+      <div id="langRequestModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langRequestText">
+        <div class="modal-card">
+          <p id="langRequestText" class="modal-text"></p>
+          <div class="modal-actions">
+            <button type="button" id="langAcceptBtn" class="btn-primary">Accept</button>
+            <button type="button" id="langRejectBtn" class="btn-primary danger">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waiting Modal -->
+      <div id="langWaitingModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langWaitingText">
+        <div class="modal-card">
+          <h3 id="langWaitingText" class="modal-title">Waiting for partner confirmation...</h3>
+        </div>
       </div>
 
       <!-- Partner Left Modal -->
