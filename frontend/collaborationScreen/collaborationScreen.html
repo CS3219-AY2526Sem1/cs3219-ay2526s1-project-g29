@@ -46,6 +46,14 @@
             <div class="editor-actions">
               <button
                 type="button"
+                class="chat-toggle-btn"
+                id="chatToggleBtn"
+                title="Toggle chat"
+              >
+                💬 Chat
+              </button>
+              <button
+                type="button"
                 class="ai-explain-btn"
                 id="aiExplainBtn"
                 title="Explain selected code with AI"
@@ -56,6 +64,31 @@
           </div>
           <div id="editorContainer" class="editor-container"></div>
         </section>
+
+        <aside class="chat-panel" id="chatPanel">
+          <div class="chat-header">
+            <h3>Chat</h3>
+            <button type="button" class="close-btn" id="chatCloseBtn" title="Close chat">×</button>
+          </div>
+          
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-empty-state">
+              No messages yet. Start chatting with your partner!
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <textarea 
+              id="chatInput" 
+              class="chat-input" 
+              placeholder="Type a message... (Shift+Enter for new line)"
+              rows="2"
+            ></textarea>
+            <button type="button" id="chatSendBtn" class="chat-send-btn" title="Send message">
+              Send
+            </button>
+          </div>
+        </aside>
 
         <aside class="ai-panel" id="aiPanel">
           <div class="ai-panel-header">
