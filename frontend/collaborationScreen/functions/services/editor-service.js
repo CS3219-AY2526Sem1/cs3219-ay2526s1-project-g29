@@ -54,3 +54,15 @@ export async function initializeEditor(container) {
 
   return { instance, monaco, model };
 }
+
+export function setEditorLanguage(editorContext, language) {
+  try {
+    const { monaco, model } = editorContext;
+    if (!monaco || !model) return false;
+    monaco.editor.setModelLanguage(model, language);
+    return true;
+  } catch (e) {
+    console.error('Failed to set language', e);
+    return false;
+  }
+}
