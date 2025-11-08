@@ -5,10 +5,10 @@ import { config } from "./config.js";
 // Message Management
 export function showMessage(message, type = "info") {
     if (!elements.messageText || !elements.messageContainer) return;
-    
+
     elements.messageText.textContent = message;
     elements.messageText.className = `message-text ${type}`;
-    
+
     // Remove hidden class and add show class
     elements.messageContainer.classList.remove("hidden");
     elements.messageContainer.classList.add("show");
@@ -27,13 +27,13 @@ export function hideMessage() {
 // Matching Status Management
 export function showMatchingStatus(message = "Searching for peers with similar preferences") {
     if (!elements.statusMessage || !elements.matchingStatus) return;
-    
+
     elements.statusMessage.textContent = message;
-    
+
     // Remove hidden class and add show class
     elements.matchingStatus.classList.remove("hidden");
     elements.matchingStatus.classList.add("show");
-    
+
     // Add pulse animation to status card
     const statusCard = elements.matchingStatus.querySelector(".status-card");
     if (statusCard) {
@@ -43,12 +43,12 @@ export function showMatchingStatus(message = "Searching for peers with similar p
 
 export function hideMatchingStatus() {
     if (!elements.matchingStatus) return;
-    
+
     const statusCard = elements.matchingStatus.querySelector(".status-card");
     if (statusCard) {
         statusCard.classList.remove("searching");
     }
-    
+
     elements.matchingStatus.classList.remove("show");
     elements.matchingStatus.classList.add("hidden");
 }
@@ -56,15 +56,15 @@ export function hideMatchingStatus() {
 // Form State Management
 export function updateFindMatchButton() {
     if (!elements.findMatchBtn) return;
-    
+
     const difficulty = elements.getDifficulty();
     const topics = elements.getTopics();
     const maxTopics = config.settings?.maxTopics || 16;
-    
+
     const isValid = difficulty && topics.length > 0 && topics.length <= maxTopics;
-    
+
     elements.findMatchBtn.disabled = !isValid;
-    
+
     // Update button text based on selection
     if (topics.length > maxTopics) {
         elements.findMatchBtn.textContent = `Too many topics (${topics.length}/${maxTopics})`;
@@ -80,16 +80,16 @@ export function showConfirmationDialog(matchData) {
     if (!elements.confirmationDialog) {
         createConfirmationDialog();
     }
-    
+
     // Update dialog content
     const partnerInfo = elements.confirmationDialog.querySelector('#partnerUsername');
     const matchDetails = elements.confirmationDialog.querySelector('#matchDetails');
     const qualityBadge = elements.confirmationDialog.querySelector('#qualityBadge');
-    
+
     if (partnerInfo) {
         partnerInfo.textContent = matchData.partnerUsername || matchData.partnerInfo?.username || 'Anonymous';
     }
-    
+
     if (matchDetails) {
         matchDetails.innerHTML = `
             <p><strong>Topics:</strong> ${matchData.matchedTopics.join(', ')}</p>
@@ -97,16 +97,16 @@ export function showConfirmationDialog(matchData) {
             <p><strong>Skill Difference:</strong> ${matchData.skillDifference}</p>
         `;
     }
-    
+
     if (qualityBadge) {
         qualityBadge.textContent = matchData.matchQuality;
         qualityBadge.className = `quality-badge ${matchData.matchQuality}`;
     }
-    
+
     // Show dialog
     elements.confirmationDialog.classList.remove('hidden');
     elements.confirmationDialog.classList.add('show');
-    
+
     // Start countdown
     startConfirmationCountdown(matchData.timeToConfirm);
 }
@@ -132,7 +132,7 @@ function createConfirmationDialog() {
     const dialog = document.createElement('div');
     dialog.id = 'confirmationDialog';
     dialog.className = 'confirmation-dialog hidden';
-    
+
     dialog.innerHTML = `
         <div class="confirmation-card">
             <div class="confirmation-header">
@@ -169,18 +169,18 @@ function createConfirmationDialog() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(dialog);
-    
+
     // Add event listeners
     dialog.querySelector('#acceptMatchBtn').addEventListener('click', () => {
         import('./eventHandlers.js').then(module => module.handleAcceptMatch());
     });
-    
+
     dialog.querySelector('#rejectMatchBtn').addEventListener('click', () => {
         import('./eventHandlers.js').then(module => module.handleRejectMatch());
     });
-    
+
     elements.confirmationDialog = dialog;
 }
 
@@ -189,14 +189,14 @@ let countdownInterval;
 function startConfirmationCountdown(timeMs) {
     let timeLeft = Math.floor(timeMs / 1000);
     const countdownElement = document.getElementById('countdownTimer');
-    
+
     if (countdownElement) {
         countdownElement.textContent = timeLeft;
-        
+
         countdownInterval = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
-            
+
             if (timeLeft <= 0) {
                 stopConfirmationCountdown();
             }
@@ -215,14 +215,14 @@ function stopConfirmationCountdown() {
 export function showValidationError(field, message) {
     field.classList.add("error");
     field.title = message;
-    
+
     const removeError = () => {
         field.classList.remove("error");
         field.title = "";
         field.removeEventListener("focus", removeError);
         field.removeEventListener("change", removeError);
     };
-    
+
     field.addEventListener("focus", removeError);
     field.addEventListener("change", removeError);
 }

@@ -53,12 +53,12 @@ export async function logout() {
         try {
             localStorage.setItem('auth:logout', String(Date.now()));
             localStorage.removeItem('user');
-        } catch {}
+        } catch { }
         try {
             const bc = new BroadcastChannel('auth');
             bc.postMessage({ type: 'logout' });
             bc.close?.();
-        } catch {}
+        } catch { }
     } catch (error) {
         console.error("Logout error:", error);
     } finally {
@@ -87,5 +87,29 @@ export async function getQuestionById(questionId) {
     } catch (error) {
         console.error(`Error fetching question ${questionId}:`, error);
         return null;
+    }
+}
+
+export async function getUserHistory(userId) {
+    try {
+        const response = await fetch(
+            `${config.historyServiceUrl}/api/history/users/${userId}`,
+            {
+                method: "GET",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+            }
+        );
+
+        if (!response.ok) {
+            throw new Error("Failed to fetch user history");
+        }
+
+        const data = await response.json();
+        return data.data || [];
+    } catch (error) {
+        console.error("Error fetching user history:", error);
+        return [];
     }
 }

@@ -8,8 +8,7 @@ services:
     ports:
       - "${FRONTEND_PORT:-3000}:3000"
     healthcheck:
-      test:
-        ["CMD-SHELL", "curl -fsS http://localhost:3000/ > /dev/null || exit 1"]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:3000/ > /dev/null || exit 1" ]
       interval: 10s
       timeout: 2s
       retries: 6
@@ -38,11 +37,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - QUESTION_SERVICE_URL=http://question-service:${QUESTION_PORT:-8003}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -fsS http://localhost:${USER_PORT:-8004}/health > /dev/null || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:${USER_PORT:-8004}/health > /dev/null || exit 1" ]
       interval: 10s
       timeout: 2s
       retries: 6
@@ -63,7 +58,7 @@ services:
       - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER}
       - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASS}
     healthcheck:
-      test: ["CMD", "rabbitmq-diagnostics", "-q", "ping"]
+      test: [ "CMD", "rabbitmq-diagnostics", "-q", "ping" ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -88,11 +83,7 @@ services:
     ports:
       - "${MATCHING_PORT:-8002}:${MATCHING_PORT:-8002}"
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -f http://localhost:${MATCHING_PORT:-8002}/health || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${MATCHING_PORT:-8002}/health || exit 1" ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -122,11 +113,7 @@ services:
       - JWT_SECRET=${JWT_SECRET}
       - COLLAB_INTERNAL_TOKEN=${COLLAB_INTERNAL_TOKEN}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -f http://localhost:${COLLAB_PORT:-8001}/health || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl -f http://localhost:${COLLAB_PORT:-8001}/health || exit 1" ]
       interval: 30s
       timeout: 3s
       retries: 3
@@ -148,7 +135,7 @@ services:
     volumes:
       - mongodb_data:/data/db
     healthcheck:
-      test: ["CMD", "mongosh", "--eval", "db.adminCommand('ping')"]
+      test: [ "CMD", "mongosh", "--eval", "db.adminCommand('ping')" ]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -172,11 +159,32 @@ services:
       - DB_LOCAL_URI=${DB_LOCAL_URI:-mongodb://mongodb:27017/peerprep}
       - DB_CLOUD_URI=${DB_CLOUD_URI}
     healthcheck:
-      test:
-        [
-          "CMD-SHELL",
-          "curl -fsS http://localhost:${QUESTION_PORT:-8003}/health > /dev/null || exit 1",
-        ]
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:${QUESTION_PORT:-8003}/health > /dev/null || exit 1" ]
+      interval: 10s
+      timeout: 2s
+      retries: 6
+    depends_on:
+      mongodb:
+        condition: service_healthy
+
+  # History service
+  history-service:
+    build:
+      context: ./backend/history-service
+    env_file:
+      - .env
+    ports:
+      - "${HISTORY_PORT:-8005}:${HISTORY_PORT:-8005}"
+    environment:
+      - NODE_ENV=${NODE_ENV:-development}
+      - ENV=${ENV:-PROD}
+      - HISTORY_PORT=${HISTORY_PORT:-8005}
+      - HISTORY_DB_LOCAL_URI=${HISTORY_DB_LOCAL_URI:-mongodb://mongodb:27017/peerprepHistoryServiceDB}
+      - HISTORY_DB_CLOUD_URI=${HISTORY_DB_CLOUD_URI}
+      - DB_LOCAL_URI=${DB_LOCAL_URI:-mongodb://mongodb:27017/peerprep}
+      - DB_CLOUD_URI=${DB_CLOUD_URI}
+    healthcheck:
+      test: [ "CMD-SHELL", "curl -fsS http://localhost:${HISTORY_PORT:-8005}/health > /dev/null || exit 1" ]
       interval: 10s
       timeout: 2s
       retries: 6

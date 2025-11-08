@@ -2,6 +2,7 @@ import { env } from '../utils/env.js';
 import { createSessionWithId, getSession, removeParticipant, closeSession } from '../services/session-store.js';
 import { toPublicSession } from '../models/session-model.js';
 import { disconnectUserFromSession } from '../middleware/ws-server.js';
+import axios from 'axios';
 
 function checkInternalAuth(req) {
   const token = req.headers['x-internal-token'] || req.headers['X-Internal-Token'];
@@ -39,13 +40,59 @@ export function getSessionHandler(req, res) {
   return res.status(200).json({ session: toPublicSession(s) });
 }
 
-// Authenticated user proactively leaves a session
-export function leaveSessionHandler(req, res) {
-  const { id } = req.params; // session id
-  const user = req.user; // set by requireAuth middleware
+export async function autosaveHandler(req, res) {
+  const { id } = req.params;
+  const user = req.user;
+  const { code, language = 'javascript' } = req.body;
 
   const s = getSession(id);
   if (!s) return res.status(404).json({ message: 'session not found' });
+
+  try {
+    await axios.post(`${env.historyServiceUrl}/api/history/saveHistory`, {
+      sessionId: id,
+      userId: user.id,
+      username: user.username || user.email || 'anonymous',
+      questionId: s.question?.id,
+      submittedCode: code || '',
+      language
+    }, {
+      timeout: 5000
+    });
+
+    return res.status(200).json({ message: 'autosaved' });
+  } catch (error) {
+    console.error('Failed to autosave:', error.message);
+    return res.status(500).json({ message: 'autosave failed' });
+  }
+}
+
+// Authenticated user proactively leaves a session
+export async function leaveSessionHandler(req, res) {
+  const { id } = req.params; // session id
+  const user = req.user; // set by requireAuth middleware
+  const { code, language = 'javascript' } = req.body;
+
+  const s = getSession(id);
+  if (!s) return res.status(404).json({ message: 'session not found' });
+
+  try {
+    await axios.post(`${env.historyServiceUrl}/api/history/saveHistory`, {
+      sessionId: id,
+      userId: user.id,
+      username: user.username || 'anonymous',
+      questionId: s.question?.id,
+      submittedCode: code || '',
+      language
+    }, {
+      timeout: 5000
+    });
+
+    console.log(`Saved history for user ${user.id} in session ${id}`);
+  } catch (error) {
+    console.error('Failed to save history:', error.message);
+    // Don't fail the disconnect if history save fails
+  }
 
   // Remove participant from store
   removeParticipant(id, user.id);

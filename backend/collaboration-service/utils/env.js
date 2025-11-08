@@ -23,9 +23,9 @@ function parseRedisOptions() {
   return url
     ? { url }
     : {
-        host,
-        port,
-      };
+      host,
+      port,
+    };
 }
 
 function parseRabbitMQOptions() {
@@ -46,4 +46,5 @@ export const env = {
   redis: parseRedisOptions(),
   rabbitmq: parseRabbitMQOptions(),
   internalApiToken: process.env.COLLAB_INTERNAL_TOKEN ?? 'dev-internal-token',
+  historyServiceUrl: process.env.HISTORY_SERVICE_URL ?? 'http://localhost:8005',
 };

@@ -6,6 +6,7 @@ export const elements = {
 
     // Filters
     difficultyFilter: document.getElementById("difficultyFilter"),
+    languageFilter: document.getElementById("languageFilter"),
     topicFilter: document.getElementById("topicFilter"),
     searchInput: document.getElementById("searchInput"),
 

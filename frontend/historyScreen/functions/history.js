@@ -63,13 +63,13 @@ function createQuestionInfo(historyData) {
 
     if (historyData.topics?.length > 0) {
         questionMeta.appendChild(
-        createMetaItem("🏷️", formatTopics(historyData.topics))
+            createMetaItem("🏷️", formatTopics(historyData.topics))
         );
     }
 
     if (historyData.partner) {
         questionMeta.appendChild(
-        createMetaItem("👥", `with ${historyData.partner}`)
+            createMetaItem("👥", `with ${historyData.partner}`)
         );
     }
 
@@ -78,25 +78,110 @@ function createQuestionInfo(historyData) {
     return questionInfo;
 }
 
-function createActionButton(attemptUrl) {
+function createActionButton(latestCode, questionData) {
     const actionBtn = createElement("button", "action-btn", "View");
     actionBtn.addEventListener("click", () => {
-        window.location.href = attemptUrl;
+        showCodeModal(latestCode, questionData);
     });
-
     return actionBtn;
 }
 
+function showCodeModal(code, questionData) {
+    const modal = document.createElement('div');
+    modal.className = 'history-code-modal';
+
+    const content = document.createElement('div');
+    content.className = 'history-code-modal-content';
+
+    const closeBtn = document.createElement('button');
+    closeBtn.className = 'history-code-modal-close';
+    closeBtn.textContent = '×';
+
+    document.body.style.overflow = 'hidden';
+
+    closeBtn.onclick = () => {
+        modal.remove();
+        document.body.style.overflow = '';
+    };
+
+    //question part
+    if (questionData) {
+        const questionSection = document.createElement('div');
+        questionSection.className = 'question-section';
+
+        const questionTitle = document.createElement('h3');
+        questionTitle.textContent = questionData.title || 'Question';
+        questionTitle.style.marginBottom = '10px';
+
+        const questionDesc = document.createElement('div');
+        questionDesc.className = 'question-description';
+        questionDesc.innerHTML = questionData.description || 'No description available';
+
+        const divider = document.createElement('hr');
+        divider.style.margin = '20px 0';
+        divider.style.border = 'none';
+        divider.style.borderTop = '1px solid #444';
+
+        questionSection.appendChild(questionTitle);
+        questionSection.appendChild(questionDesc);
+        questionSection.appendChild(divider);
+        content.appendChild(questionSection);
+    }
+
+    //code part
+    const codeHeader = document.createElement('h4');
+    codeHeader.textContent = 'Your Solution:';
+    codeHeader.style.marginBottom = '10px';
+    content.appendChild(codeHeader);
+
+    const codeBlock = document.createElement('pre');
+    codeBlock.className = 'history-code-modal-pre';
+    codeBlock.textContent = code || '// No code saved';
+
+    content.appendChild(closeBtn);
+    content.appendChild(codeBlock);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+
+    modal.onclick = (e) => {
+        if (e.target === modal) {
+            modal.remove();
+            document.body.style.overflow = '';
+        }
+    };
+
+    const handleEscape = (e) => {
+        if (e.key === 'Escape') {
+            modal.remove();
+            document.body.style.overflow = '';
+            document.removeEventListener('keydown', handleEscape);
+        }
+    };
+    document.addEventListener('keydown', handleEscape);
+}
+
+function createLanguageBadge(language) {
+    if (!language) return null;
+    const badge = createElement("div", "language-badge", language);
+    return badge;
+}
+
 function createHistoryItem(historyData) {
+    console.log(historyData);
     const item = createElement("div", "history-item");
 
     const difficultyBadge = createDifficultyBadge(historyData.difficulty);
-
+    const languageBadge = createLanguageBadge(capitaliseFirstLetter(historyData.language));
     const questionInfo = createQuestionInfo(historyData);
+    // const isRecent = (new Date() - new Date(historyData.attemptedAt)) < 2 * 60 * 60 * 1000;
 
-    const actionBtn = createActionButton(historyData.attemptUrl);
+    // if (isRecent) {
+    //     const activeBadge = createElement("div", "status-badge active", "Recently Active");
+    //     item.append(activeBadge);
+    // }
+    const actionBtn = createActionButton(historyData.latestCode, historyData.questionData);
 
-    item.append(difficultyBadge, questionInfo, actionBtn);
+    item.append(difficultyBadge, languageBadge, questionInfo, actionBtn);
 
     return item;
 }
@@ -163,6 +248,14 @@ export function filterHistory(historyData, filters) {
         if (
             filters.difficulty !== "all" &&
             item.difficulty?.toLowerCase() !== filters.difficulty.toLowerCase()
+        ) {
+            return false;
+        }
+
+        // Language filter
+        if (
+            filters.language !== "all" &&
+            item.language?.toLowerCase() !== filters.language.toLowerCase()
         ) {
             return false;
         }

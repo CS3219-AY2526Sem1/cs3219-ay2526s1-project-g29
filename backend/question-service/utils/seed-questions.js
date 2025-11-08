@@ -27,14 +27,18 @@ You must do this by modifying the input array in-place with <code>O(1)</code> ex
 - <code>s[i]</code> is a printable ascii character.`,
         difficulty: "easy",
         topics: ["strings", "algorithms"],
-        constraints: `• 1 <= s.length <= 10^5
-• s[i] is a printable ascii character.`
     },
     {
         title: "Linked List Cycle Detection",
         description: "Implement a function to detect if a linked list contains a cycle.",
         difficulty: "easy",
         topics: ["data-structures", "algorithms", "linked-lists"],
+    },
+    {
+        title: "Roman to Integer",
+        description: "Given a roman numeral, convert it to an integer.",
+        difficulty: "easy",
+        topics: ["algorithms"],
     },
     {
         title: "Add Binary",
@@ -55,6 +59,31 @@ Given <code>n</code>, calculate <code>F(n)</code>.`,
         topics: ["recursion", "algorithms", "dynamic-programming"],
     },
     {
+        title: "Implement Stack using Queues",
+        description: `Implement a last-in-first-out (LIFO) stack using only two queues. The implemented stack should support all the functions of a normal stack (push, top, pop, and empty).`,
+        difficulty: "easy",
+        topics: ["data-structures", "stacks", "queues"],
+    },
+    {
+        title: "Combine Two Tables",
+        description: `Given table <code>Person</code> with the following columns:<br>
+<pre>1. <code>personId (int)</code>
+2. <code>lastName (varchar)</code>
+3. <code>firstName (varchar)</code></pre>
+
+<code>personId</code> is the primary key.
+And table <code>Address</code> with the following columns:<br>
+<pre>1. <code>addressId (int)</code>
+2. <code>personId (int)</code>
+3. <code>city (varchar)</code>
+4. <code>state (varchar)</code></pre>
+<code>addressId</code> is the primary key.<br><br>
+Write a solution to report the first name, last name, city, and state of each person in the <code>Person</code> table. If the address of a <code>personId</code> is not present in the <code>Address</code> table, report <code>null</code> instead.<br><br>
+Return the result table in any order.`,
+        difficulty: "easy",
+        topics: ["databases"],
+    },
+    {
         title: "Repeated DNA Sequences",
         description: `The DNA sequence is composed of a series of nucleotides abbreviated as <code>'A'</code>, <code>'C'</code>, <code>'G'</code>, and <code>'T'</code>.<br><br>
 
@@ -65,6 +94,17 @@ When studying DNA, it is useful to identify repeated sequences within the DNA.<b
 Given a string <code>s</code> that represents a DNA sequence, return all the 10-letter-long sequences (substrings) that occur more than once in a DNA molecule. You may return the answer in any order.`,
         difficulty: "medium",
         topics: ["algorithms", "bit-manipulation", "hash-tables", "strings"],
+    },
+    {
+        title: "Course Schedule",
+        description: `There are a total of <code>numCourses</code> courses you have to take, labeled from <code>0</code> to <code>numCourses - 1</code>. <br><br>
+
+You are given an array <code>prerequisites</code> where <code>prerequisites[i] = [ai, bi]</code> indicates that you must take course <code>bi</code> first if you want to take course <code>ai</code>. <br><br>
+
+For example, the pair <code>[0, 1]</code>, indicates that to take course 0 you have to first take course 1. Return <code>true</code> if you can finish all courses. Otherwise, return <code>false</code>.
+`,
+        difficulty: "medium",
+        topics: ["data-structures", "algorithms"],
     },
     {
         title: "LRU Cache Design",
@@ -93,6 +133,16 @@ Rotate the image by 90 degrees (clockwise).`,
         topics: ["arrays", "algorithms", "matrix"],
     },
     {
+        title: "Airplane Seat Assignment Probability",
+        description: `<code>n</code> passengers board an airplane with exactly <code>n</code> seats. The first passenger has lost the ticket and picks a seat randomly. But after that, the rest of the passengers will: <br>
+
+        <pre>Take their own seat if it is still available, and Pick other seats randomly when they find their seat occupied.</pre><br>
+
+        Return the probability that the <code>n</code>th person gets his own seat.`,
+        difficulty: "medium",
+        topics: ["math"],
+    },
+    {
         title: "Validate Binary Search Tree",
         description: "Given the root of a binary tree, determine if it is a valid binary search tree (BST).",
         difficulty: "medium",
@@ -105,6 +155,17 @@ Rotate the image by 90 degrees (clockwise).`,
 Return the max sliding window.`,
         difficulty: "hard",
         topics: ["arrays", "algorithms"],
+    },
+    {
+        title: "N-Queen Problem",
+        description: `The n-queens puzzle is the problem of placing <code>n</code> queens on an <code>n x n</code> chessboard such that no two queens attack each other. <br><br>
+        
+        Given an integer <code>n</code>, return all distinct solutions to the n- queens puzzle. You may return the answer in any order. <br><br>
+        
+        Each solution contains a distinct board configuration of the n-queens' placement, where 'Q' and '.' both indicate a queen and an empty space, respectively.
+        `,
+        difficulty: "hard",
+        topics: ["algorithms"],
     },
     {
         title: "Serialize and Deserialize a Binary Tree",
@@ -136,6 +197,39 @@ Also, if any player starts their turn with the bitwise XOR of all the elements o
 Return <code>true</code> if and only if Alice wins the game, assuming both players play optimally.`,
         difficulty: "hard",
         topics: ["bit-manipulation"],
+    },
+    {
+        title: "Trips and Users",
+        description: `
+        Given table <code>Trips</code>:
+<pre>1. <code>id</code> (int)
+2. <code>client_id</code> (int)
+3. <code>driver_id</code> (int)
+4. <code>city_id</code> (int)
+5. <code>status</code>
+(enum)
+6. <code>request_at</code> (date)</pre>
+
+<code>id</code> is the primary key. <br><br>
+
+The table holds all taxi trips. Each trip has a unique <code>id</code>, while <code>client_id</code> and <code>driver_id</code> are foreign keys to the <code>users_id</code> at the <code>Users</code> table.
+<code>status</code> is an <code>ENUM</code> (category) type of <code>('completed', 'cancelled_by_driver', 'cancelled_by_client')</code>. <br><br>
+
+And table <code>Users</code>:
+<pre>1. <code>users_id</code> (int)
+2. <code>banned</code> (enum)
+3. <code>role</code> (enum)</pre>
+
+<code>users_id</code> is the primary key (column with unique values) for this table. <br><br>
+
+The table holds all users. Each user has a unique <code>users_id</code>, and <code>role</code> is an <code>ENUM</code> type of <code>('client', 'driver', 'partner')</code>. <br>
+<code>banned</code> is an <code>ENUM</code> (category) type of <code>('Yes', 'No')</code>. The cancellation rate is computed by dividing the number of canceled (by client or driver) requests with unbanned users by the total number of requests with unbanned users on that day. <br><br>
+
+Write a solution to find the cancellation rate of requests with unbanned users (both client and driver must not be banned) each day between <code>"2013-10-01"</code> and <code>"2013-10-03"</code>. Round Cancellation Rate to two decimal points. <br><br>
+
+Return the result table in any order.`,
+        difficulty: "hard",
+        topics: ["databases"],
     },
 ];
 

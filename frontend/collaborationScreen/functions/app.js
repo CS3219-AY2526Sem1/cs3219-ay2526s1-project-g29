@@ -13,6 +13,7 @@ const state = {
   realtime: null,
   socket: null,
   sessionId: null,
+  autosaveInterval: null,
   participants: [],
   currentUser: null,
   partnerConnected: false,
@@ -42,6 +43,8 @@ export async function initializeCollaborationScreen() {
     handleDisconnect(refs, { manual: true });
   });
 
+  window.addEventListener('beforeunload', handleBeforeUnload);
+
   // Language selection
   if (refs.languageSelect) {
     refs.languageSelect.value = state.language;
@@ -58,7 +61,7 @@ export async function initializeCollaborationScreen() {
         handleLoggedOut(refs);
       }
     };
-  } catch {}
+  } catch { }
   window.addEventListener('storage', (e) => {
     if (e.key === 'auth:logout') {
       handleLoggedOut(refs);
@@ -83,7 +86,7 @@ export async function initializeCollaborationScreen() {
       if (!state.langPending || state.langPending.requestedBy !== 'partner') return;
       const language = state.langPending.language;
       const payload = { type: 'language-response', accepted: true, language, username: state.currentUser?.username };
-      try { state.socket?.send(payload); } catch {}
+      try { state.socket?.send(payload); } catch { }
       refs.langRequestModal?.classList.add('hidden');
       applyLanguageChange(refs, language);
       showMessage(`Language changed to ${language}.`, 'success');
@@ -96,7 +99,7 @@ export async function initializeCollaborationScreen() {
       if (!state.langPending || state.langPending.requestedBy !== 'partner') return;
       const language = state.langPending.language;
       const payload = { type: 'language-response', accepted: false, language, username: state.currentUser?.username };
-      try { state.socket?.send(payload); } catch {}
+      try { state.socket?.send(payload); } catch { }
       refs.langRequestModal?.classList.add('hidden');
       state.langPending = null;
     });
@@ -134,7 +137,7 @@ async function handleConnect(refs) {
   try {
     socket = createSessionSocket({
       sessionId,
-      onReady: (payload) => {
+      onReady: async (payload) => {
         state.sessionId = payload.sessionId;
         updateStatus(refs, `Connected to session ${payload.sessionId}`, "success");
         state.participants = payload.participants ?? [];
@@ -148,7 +151,7 @@ async function handleConnect(refs) {
         });
 
         // Send initial full content to sync
-        try { state.realtime.sendFull(); } catch {}
+        try { state.realtime.sendFull(); } catch { }
 
         state.editor?.instance?.layout?.();
 
@@ -156,8 +159,28 @@ async function handleConnect(refs) {
         const other = (state.participants || []).find((p) => p.id !== meId);
         state.partnerConnected = Boolean(other && other.username && other.username !== 'anonymous');
 
+        try {
+          const initialCode = state.editor?.model?.getValue() || '';
+          const language = state.editor?.model?.getLanguageId() || 'javascript';
+
+          await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              code: initialCode,
+              language
+            })
+          });
+          console.log('Initial history saved on connection');
+        } catch (error) {
+          console.error('Initial save failed:', error);
+        }
+
         // Grace period for partner to join; if they don't, redirect back
-        if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+        if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
         if (!state.partnerConnected) {
           state.partnerJoinTimer = setTimeout(() => {
             if (!state.partnerConnected && !state.disconnecting) {
@@ -168,6 +191,8 @@ async function handleConnect(refs) {
 
         // Initialize chat after connection
         initializeChat(socket, user.id);
+        
+        startAutosave();
       },
       onParticipants: (participants) => {
         const prev = Array.isArray(state.participants) ? state.participants : [];
@@ -191,7 +216,7 @@ async function handleConnect(refs) {
           const joinerId = evt?.user?.id;
           if (joinerId && joinerId !== state.currentUser?.id) {
             state.partnerConnected = true;
-            if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+            if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
             state.partnerJoinTimer = null;
           }
         }
@@ -238,11 +263,63 @@ async function handleConnect(refs) {
   socket.connect();
 }
 
+function startAutosave() {
+  if (state.autosaveInterval) {
+    clearInterval(state.autosaveInterval);
+  }
+
+  state.autosaveInterval = setInterval(async () => {
+    if (!state.sessionId || !state.editor) return;
+
+    try {
+      const currentCode = state.editor.model.getValue();
+      const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
+      console.log('Autosaving with language:', language);
+
+      await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: currentCode,
+          language
+        })
+      });
+
+      console.log('Code autosaved at', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Autosave failed:', error);
+    }
+  }, 30000); // 30 seconds
+}
+
+function handleBeforeUnload(e) {
+  if (state.sessionId && state.editor) {
+    const currentCode = state.editor.model.getValue();
+    const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
+
+    const blob = new Blob([JSON.stringify({ code: currentCode, language })], {
+      type: 'application/json'
+    });
+
+    navigator.sendBeacon(
+      `${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`,
+      blob
+    );
+  }
+}
+
 async function handleDisconnect(refs, { manual, message, redirectTo }) {
   if (state.disconnecting) return;
   state.disconnecting = true;
-  if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch {} }
+  if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
   state.partnerJoinTimer = null;
+  if (state.autosaveInterval) {
+    clearInterval(state.autosaveInterval);
+    state.autosaveInterval = null;
+  }
   if (!state.socket) {
     setConnectionState(refs, { connected: false });
     return;
@@ -250,10 +327,22 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
 
   try {
     if (state.sessionId) {
+      const currentCode = state.editor?.model?.getValue() || '';
+      const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
+
       await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/leave`, {
-          method: "POST",
-          credentials: "include",
-      }).catch(() => {});
+        method: "POST",
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: currentCode,
+          language: language
+        })
+      }).catch((err) => {
+        console.error('Failed to leave session:', err);
+      });
     }
     state.socket.disconnect();
   } catch (error) {
@@ -290,7 +379,7 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
         const target = redirectTo === 'login' ? COLLAB_CONFIG.routes.login : COLLAB_CONFIG.routes.dashboard;
         window.location.href = target;
       }, 1500);
-    } catch {}
+    } catch { }
   }
   state.disconnecting = false;
 }
@@ -354,7 +443,7 @@ function handleControlEvent(refs, evt) {
       if (accepted) {
         applyLanguageChange(refs, language);
         // Inform partner
-        try { state.socket?.send({ type: 'language-change', language }); } catch {}
+        try { state.socket?.send({ type: 'language-change', language }); } catch { }
         showMessage(`Language changed to ${language}.`, 'success');
         setTimeout(() => hideMessage(), 3000);
       } else {

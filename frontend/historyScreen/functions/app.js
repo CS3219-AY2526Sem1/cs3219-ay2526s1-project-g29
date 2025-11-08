@@ -1,18 +1,20 @@
 import { elements } from "./elements.js";
 import {
     checkSession,
-    getQuestionsAttempted,
+    // getQuestionsAttempted,
     logout,
     getQuestionById,
+    getUserHistory,
 } from "./auth.js";
 import { renderHistoryItems, filterHistory } from "./history.js";
-import { DIFFICULTIES, TOPICS } from "../../shared/filters.js";
+import { DIFFICULTIES, LANGUAGES, TOPICS } from "../../shared/filters.js";
 import { config } from "./config.js";
 
 let questionsAttempted = [];
 let historyData = [];
 let currentFilters = {
     difficulty: "all",
+    language: "all",
     topic: "all",
     search: "",
 };
@@ -28,11 +30,13 @@ async function initialise() {
         return;
     }
 
+    const userId = session.data?.user?.id || session.data?.id;
+
     addFiltersToUI();
 
     setupEventListeners();
 
-    await loadHistory();
+    await loadHistory(userId);
 }
 
 function addFiltersToUI() {
@@ -44,6 +48,16 @@ function addFiltersToUI() {
         option.value = difficulty.value;
         option.textContent = difficulty.label;
         difficultyFilter.appendChild(option);
+    });
+
+    // Add language filters to UI
+    const languageFilter = elements.languageFilter;
+    languageFilter.innerHTML = '<option value="all">All Languages</option>';
+    LANGUAGES.forEach((language) => {
+        const option = document.createElement("option");
+        option.value = language.value;
+        option.textContent = language.label;
+        languageFilter.appendChild(option);
     });
 
     // Add topic filters to UI
@@ -81,6 +95,12 @@ function setupEventListeners() {
         applyFilters();
     });
 
+    // Language Filters
+    elements.languageFilter.addEventListener("change", (e) => {
+        currentFilters.language = e.target.value;
+        applyFilters();
+    });
+
     // Topic Filters
     elements.topicFilter.addEventListener("change", (e) => {
         currentFilters.topic = e.target.value;
@@ -94,17 +114,46 @@ function setupEventListeners() {
     });
 }
 
-async function loadHistory() {
+async function loadHistory(userId) {
     try {
-        questionsAttempted = await getQuestionsAttempted();
+        // questionsAttempted = await getQuestionsAttempted();
+        const historyRecords = await getUserHistory(userId);
         historyData = [];
-        for (const questionAttempted of questionsAttempted) {
-            const questionData = await getQuestionById(questionAttempted.questionId);
-            historyData.push({
-                ...questionAttempted,
-                ...questionData,
-            });
+        for (const record of historyRecords) {
+            const currentUserParticipant = record.participants.find(
+                p => p.id === userId
+            );
+
+            if (!currentUserParticipant) continue;
+
+            //find partner
+            const partner = record.participants.find(p => p.id !== userId);
+
+            const questionData = await getQuestionById(record.questionId);
+
+            if (questionData) {
+                historyData.push({
+                    sessionId: record.sessionId,
+                    questionId: record.questionId,
+                    title: questionData.title,
+                    difficulty: questionData.difficulty,
+                    topics: questionData.topics || [],
+                    attemptedAt: record.updatedAt,
+                    partner: partner?.username || 'Unknown',
+                    latestCode: record.latestCode,
+                    language: record.language || 'javascript',
+                    questionData: questionData,
+                });
+            }
         }
+
+        // for (const questionAttempted of questionsAttempted) {
+        //     const questionData = await getQuestionById(questionAttempted.questionId);
+        //     historyData.push({
+        //         ...questionAttempted,
+        //         ...questionData,
+        //     });
+        // }
         renderHistoryItems(historyData);
     } catch (error) {
         console.error("Error loading history:", error);
