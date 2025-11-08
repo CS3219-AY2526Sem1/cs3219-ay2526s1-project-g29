@@ -121,9 +121,11 @@ async function loadHistory(userId) {
                     title: questionData.title,
                     difficulty: questionData.difficulty,
                     topics: questionData.topics || [],
-                    attemptedAt: record.createdAt, // or record.updatedAt
+                    attemptedAt: record.updatedAt,
                     partner: partner?.username || 'Unknown',
-                    latestCode: currentUserParticipant.latestCode,
+                    latestCode: record.latestCode,
+                    language: record.language || 'javascript',
+                    questionData: questionData,
                 });
             }
         }

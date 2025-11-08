@@ -1,104 +1,79 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PeerPrep - History</title>
-    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
-    <link rel="stylesheet" href="../shared/sharedStyles.css">
-    <link rel="stylesheet" href="historyScreenStyles.css">
-  </head>
-  <body>
-    <!-- Navigation Header -->
-    <div class="header">
-      <div class="nav-tabs">
-        <a
-          href="../profileScreen/profileScreen.html"
-          class="nav-tab"
-          id="profileTab"
-          >Profile</a
-        >
-        <a href="../matchScreen/matchScreen.html" class="nav-tab" id="matchTab"
-          >Match</a
-        >
-        <a
-          href="../historyScreen/historyScreen.html"
-          class="nav-tab active"
-          id="historyTab"
-          >History</a
-        >
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PeerPrep - History</title>
+  <link rel="icon" type="image/svg+xml" href="../shared/logo.svg">
+  <link rel="stylesheet" href="../shared/sharedStyles.css">
+  <link rel="stylesheet" href="historyScreenStyles.css">
+</head>
+
+<body>
+  <!-- Navigation Header -->
+  <div class="header">
+    <div class="nav-tabs">
+      <a href="../profileScreen/profileScreen.html" class="nav-tab" id="profileTab">Profile</a>
+      <a href="../matchScreen/matchScreen.html" class="nav-tab" id="matchTab">Match</a>
+      <a href="../historyScreen/historyScreen.html" class="nav-tab active" id="historyTab">History</a>
+    </div>
+
+    <div class="logo">PeerPrep</div>
+
+    <div class="user-menu">
+      <div class="user-avatar" id="userAvatar">
+        <i class="user-icon">👤</i>
+      </div>
+      <div class="dropdown-menu" id="dropdownMenu">
+        <a href="../dashboardScreen/dashboardScreen.html" class="dropdown-item">Dashboard</a>
+        <a href="../loginScreen/loginScreen.html" class="dropdown-item" id="logoutBtn">Logout</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- History Content -->
+  <div class="history-container">
+    <!-- Filter Bar -->
+    <div class="filter-bar">
+      <div class="filter-group">
+        <label for="difficultyFilter">Difficulty:</label>
+        <select id="difficultyFilter" class="filter-select">
+          <option value="all">All Difficulties</option>
+        </select>
       </div>
 
-      <div class="logo">PeerPrep</div>
+      <div class="filter-group">
+        <label for="topicFilter">Topic:</label>
+        <select id="topicFilter" class="filter-select">
+          <option value="all">All Topics</option>
+        </select>
+      </div>
 
-      <div class="user-menu">
-        <div class="user-avatar" id="userAvatar">
-          <i class="user-icon">👤</i>
-        </div>
-        <div class="dropdown-menu" id="dropdownMenu">
-          <a
-            href="../dashboardScreen/dashboardScreen.html"
-            class="dropdown-item"
-            >Dashboard</a
-          >
-          <a
-            href="../loginScreen/loginScreen.html"
-            class="dropdown-item"
-            id="logoutBtn"
-            >Logout</a
-          >
-        </div>
+      <div class="search-group">
+        <input type="text" id="searchInput" class="search-input" placeholder="Search questions..." />
       </div>
     </div>
 
-    <!-- History Content -->
-    <div class="history-container">
-      <!-- Filter Bar -->
-      <div class="filter-bar">
-        <div class="filter-group">
-          <label for="difficultyFilter">Difficulty:</label>
-          <select id="difficultyFilter" class="filter-select">
-            <option value="all">All Difficulties</option>
-          </select>
-        </div>
-
-        <div class="filter-group">
-          <label for="topicFilter">Topic:</label>
-          <select id="topicFilter" class="filter-select">
-            <option value="all">All Topics</option>
-          </select>
-        </div>
-
-        <div class="search-group">
-          <input
-            type="text"
-            id="searchInput"
-            class="search-input"
-            placeholder="Search questions..."
-          />
-        </div>
+    <!-- Question History List -->
+    <div class="history-list" id="historyList">
+      <!-- Loading State -->
+      <div class="loading-state" id="loadingState">
+        <div class="spinner-large"></div>
+        <p>Loading your history...</p>
       </div>
 
-      <!-- Question History List -->
-      <div class="history-list" id="historyList">
-        <!-- Loading State -->
-        <div class="loading-state" id="loadingState">
-          <div class="spinner-large"></div>
-          <p>Loading your history...</p>
-        </div>
-
-        <!-- Empty State -->
-        <div class="empty-state hidden" id="emptyState">
-          <div class="empty-icon">📚</div>
-          <h3>No History Yet</h3>
-          <p>Start solving problems to build your history!</p>
-          <a href="../matchScreen/matchScreen.html" class="start-btn"
-            >Start Matching</a
-          >
-        </div>
+      <!-- Empty State -->
+      <div class="empty-state hidden" id="emptyState">
+        <div class="empty-icon">📚</div>
+        <h3>No History Yet</h3>
+        <p>Start solving problems to build your history!</p>
+        <a href="../matchScreen/matchScreen.html" class="start-btn">Start Matching</a>
       </div>
     </div>
+  </div>
 
-    <script type="module" src="functions/app.js"></script>
-  </body>
+  <script type="module" src="functions/app.js"></script>
+</body>
+
 </html>

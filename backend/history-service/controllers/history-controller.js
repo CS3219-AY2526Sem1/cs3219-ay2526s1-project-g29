@@ -8,10 +8,18 @@ async function saveHistory(req, res) {
             username,
             questionId,
             submittedCode,
+            language = 'javascript'
         } = req.body;
+
+        console.log('Saving history with language:', language);
 
         if (!sessionId || !userId || !questionId) {
             return res.status(400).json({ message: 'Missing required fields' });
+        }
+
+        let codeToSave = submittedCode;
+        if (typeof submittedCode === 'object' && submittedCode !== null && submittedCode.code) {
+            codeToSave = submittedCode.code;
         }
 
         let history = await History.findOne({ sessionId });
@@ -22,23 +30,36 @@ async function saveHistory(req, res) {
                 participants: [{
                     id: userId,
                     username: username || 'anonymous',
-                    latestCode: submittedCode || '',
                 }],
                 questionId,
+                latestCode: codeToSave || '',
+                language: language,
             });
         } else {
-            const idx = history.participants.findIndex(p => p.id === userId);
-            if (idx !== -1) {
-                history.participants[idx].latestCode = submittedCode || '';
-                if (username) history.participants[idx].username = username;
+            const participantIdx = history.participants.findIndex(p => p.id === userId);
+            if (participantIdx === -1) {
+                history.participants.push({
+                    id: userId,
+                    username: username || 'anonymous',
+                    latestCode: codeToSave || '',
+                    language,
+                });
+            } else {
+                history.participants[participantIdx].latestCode = codeToSave || '';
+                history.participants[participantIdx].language = language;
             }
+
+            history.latestCode = codeToSave || '';
+            history.language = language;
+
         }
 
         await history.save();
 
         return res.status(201).json({
             message: 'history saved/updated successfully',
-            sessionId: history.sessionId
+            sessionId: history.sessionId,
+            language: history.language
         });
 
     } catch (err) {
@@ -53,7 +74,7 @@ async function getAllUserHistory(req, res) {
         const { page = 1, limit = 10 } = req.query;
 
         const histories = await History.find({ "participants.id": userId })
-            .sort({ createdAt: -1 })
+            .sort({ updatedAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
 

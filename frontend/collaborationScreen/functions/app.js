@@ -12,6 +12,7 @@ const state = {
   realtime: null,
   socket: null,
   sessionId: null,
+  autosaveInterval: null,
   participants: [],
   currentUser: null,
   partnerConnected: false,
@@ -40,6 +41,8 @@ export async function initializeCollaborationScreen() {
   refs.disconnectButton.addEventListener("click", () => {
     handleDisconnect(refs, { manual: true });
   });
+
+  window.addEventListener('beforeunload', handleBeforeUnload);
 
   // Language selection
   if (refs.languageSelect) {
@@ -133,7 +136,7 @@ async function handleConnect(refs) {
   try {
     socket = createSessionSocket({
       sessionId,
-      onReady: (payload) => {
+      onReady: async (payload) => {
         state.sessionId = payload.sessionId;
         updateStatus(refs, `Connected to session ${payload.sessionId}`, "success");
         state.participants = payload.participants ?? [];
@@ -155,6 +158,26 @@ async function handleConnect(refs) {
         const other = (state.participants || []).find((p) => p.id !== meId);
         state.partnerConnected = Boolean(other && other.username && other.username !== 'anonymous');
 
+        try {
+          const initialCode = state.editor?.model?.getValue() || '';
+          const language = state.editor?.model?.getLanguageId() || 'javascript';
+
+          await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`, {
+            method: "POST",
+            credentials: "include",
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+              code: initialCode,
+              language
+            })
+          });
+          console.log('Initial history saved on connection');
+        } catch (error) {
+          console.error('Initial save failed:', error);
+        }
+
         // Grace period for partner to join; if they don't, redirect back
         if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
         if (!state.partnerConnected) {
@@ -164,6 +187,8 @@ async function handleConnect(refs) {
             }
           }, 1500);
         }
+
+        startAutosave();
       },
       onParticipants: (participants) => {
         const prev = Array.isArray(state.participants) ? state.participants : [];
@@ -230,11 +255,63 @@ async function handleConnect(refs) {
   socket.connect();
 }
 
+function startAutosave() {
+  if (state.autosaveInterval) {
+    clearInterval(state.autosaveInterval);
+  }
+
+  state.autosaveInterval = setInterval(async () => {
+    if (!state.sessionId || !state.editor) return;
+
+    try {
+      const currentCode = state.editor.model.getValue();
+      const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
+      console.log('Autosaving with language:', language);
+
+      await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`, {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          code: currentCode,
+          language
+        })
+      });
+
+      console.log('Code autosaved at', new Date().toLocaleTimeString());
+    } catch (error) {
+      console.error('Autosave failed:', error);
+    }
+  }, 30000); // 30 seconds
+}
+
+function handleBeforeUnload(e) {
+  if (state.sessionId && state.editor) {
+    const currentCode = state.editor.model.getValue();
+    const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
+
+    const blob = new Blob([JSON.stringify({ code: currentCode, language })], {
+      type: 'application/json'
+    });
+
+    navigator.sendBeacon(
+      `${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`,
+      blob
+    );
+  }
+}
+
 async function handleDisconnect(refs, { manual, message, redirectTo }) {
   if (state.disconnecting) return;
   state.disconnecting = true;
   if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
   state.partnerJoinTimer = null;
+  if (state.autosaveInterval) {
+    clearInterval(state.autosaveInterval);
+    state.autosaveInterval = null;
+  }
   if (!state.socket) {
     setConnectionState(refs, { connected: false });
     return;
@@ -243,6 +320,7 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
   try {
     if (state.sessionId) {
       const currentCode = state.editor?.model?.getValue() || '';
+      const language = state.language || state.editor?.model?.getLanguageId?.() || 'javascript';
 
       await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/leave`, {
         method: "POST",
@@ -251,7 +329,8 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
           'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-          code: currentCode
+          code: currentCode,
+          language: language
         })
       }).catch((err) => {
         console.error('Failed to leave session:', err);

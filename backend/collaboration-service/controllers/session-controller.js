@@ -40,11 +40,10 @@ export function getSessionHandler(req, res) {
   return res.status(200).json({ session: toPublicSession(s) });
 }
 
-// Authenticated user proactively leaves a session
-export async function leaveSessionHandler(req, res) {
-  const { id } = req.params; // session id
-  const user = req.user; // set by requireAuth middleware
-  const { code } = req.body;
+export async function autosaveHandler(req, res) {
+  const { id } = req.params;
+  const user = req.user;
+  const { code, language = 'javascript' } = req.body;
 
   const s = getSession(id);
   if (!s) return res.status(404).json({ message: 'session not found' });
@@ -56,6 +55,35 @@ export async function leaveSessionHandler(req, res) {
       username: user.username || user.email || 'anonymous',
       questionId: s.question?.id,
       submittedCode: code || '',
+      language
+    }, {
+      timeout: 5000
+    });
+
+    return res.status(200).json({ message: 'autosaved' });
+  } catch (error) {
+    console.error('Failed to autosave:', error.message);
+    return res.status(500).json({ message: 'autosave failed' });
+  }
+}
+
+// Authenticated user proactively leaves a session
+export async function leaveSessionHandler(req, res) {
+  const { id } = req.params; // session id
+  const user = req.user; // set by requireAuth middleware
+  const { code, language = 'javascript' } = req.body;
+
+  const s = getSession(id);
+  if (!s) return res.status(404).json({ message: 'session not found' });
+
+  try {
+    await axios.post(`${env.historyServiceUrl}/api/history/saveHistory`, {
+      sessionId: id,
+      userId: user.id,
+      username: user.username || 'anonymous',
+      questionId: s.question?.id,
+      submittedCode: code || '',
+      language
     }, {
       timeout: 5000
     });

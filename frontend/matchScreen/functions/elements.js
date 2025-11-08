@@ -56,6 +56,11 @@ export const elements = {
                 topicInputs.forEach(input => {
                     input.checked = e.target.checked;
                 });
+
+                const changeEvent = new Event('change', { bubbles: true });
+                if (topicInputs.length > 0) {
+                    topicInputs[0].dispatchEvent(changeEvent);
+                }
             });
 
             this.getAllTopicInputs().forEach(input => {
