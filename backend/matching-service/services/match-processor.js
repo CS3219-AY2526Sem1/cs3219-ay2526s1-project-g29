@@ -17,12 +17,24 @@ const pendingMatches = new Map();
 // Timeout tracking
 const timeoutTrackers = new Map(); // userId -> timeoutId
 
-const MATCH_TIMEOUT_MS = Number(process.env.MATCHING_TIMEOUT) || 30000;
+// Enhanced configuration
+const MATCH_TIMEOUT_MS = Number(process.env.MATCHING_TIMEOUT) || 120000; // 2 minutes total
+const SKILL_RELAXATION_TIME = Number(process.env.SKILL_RELAXATION_TIME) || 60000; // 1 minute skill decay
+const INITIAL_SKILL_THRESHOLD = Number(process.env.INITIAL_SKILL_THRESHOLD) || 10; // Initial max skill diff
+const MAX_SKILL_THRESHOLD = Number(process.env.MAX_SKILL_THRESHOLD) || 300; // Maximum threshold
+const MATCH_CHECK_INTERVAL = 5000; // Check for matches every 5 seconds
+
+// Confirmation tracking
+const pendingConfirmations = new Map(); // sessionId -> { user1: {userId, confirmed}, user2: {userId, confirmed}, timeout }
+const CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds to confirm
 
 export async function startMatchProcessor() {
   const channel = getChannel();
   
-  console.log("Starting match processor...");
+  console.log("Starting enhanced match processor with skill-based delays...");
+  console.log(`- Total timeout: ${MATCH_TIMEOUT_MS}ms`);
+  console.log(`- Skill relaxation time: ${SKILL_RELAXATION_TIME}ms`);
+  console.log(`- Initial skill threshold: ${INITIAL_SKILL_THRESHOLD}`);
   
   // Consume match requests
   await channel.consume(MATCH_REQUEST_QUEUE, async (msg) => {
@@ -41,7 +53,10 @@ export async function startMatchProcessor() {
     }
   });
   
-  console.log("Match processor listening for requests");
+  // Start periodic match checking for delayed matches
+  startPeriodicMatching();
+  
+  console.log("Enhanced match processor listening for requests");
 }
 
 async function processMatchRequest(request) {
@@ -60,84 +75,227 @@ async function processMatchRequest(request) {
   // Calculate skill score for this user
   const userSkillScore = calculateSkillScore(questionStats);
   
-  // Try to find a match: must have common topic AND same difficulty
+  // Try immediate matching first
+  const match = findBestMatch(queue, { userId, topics, userSkillScore, questionStats }, 0);
+  
+  if (match.found) {
+    // Immediate match found
+    await executeMatch(queue, match, { userId, topics, questionStats }, difficultyKey, difficulty);
+  } else {
+    // No immediate match, add to queue for delayed matching
+    queue.push({ 
+      userId, 
+      topics, 
+      difficulty, 
+      questionStats, 
+      timestamp,
+      skillScore: userSkillScore,
+      joinedAt: Date.now() // Track when user joined queue
+    });
+    
+    console.log(`User ${userId} added to queue for difficulty:${difficultyKey}, topics:[${topics.join(", ")}]. Queue size: ${queue.length}`);
+    console.log(`User skill score: ${userSkillScore}, will use relaxed matching over time`);
+    
+    // Set total timeout (2 minutes)
+    setMatchTimeout(userId, difficultyKey);
+  }
+}
+
+// Enhanced matching function with time-based skill threshold
+function findBestMatch(queue, currentUser, timeInQueue = 0) {
+  const { userId, topics, userSkillScore } = currentUser;
+  
+  // Calculate current skill threshold based on time in queue
+  const skillThreshold = calculateSkillThreshold(timeInQueue);
+  
   let bestMatchIdx = -1;
   let bestSkillDiff = Infinity;
   let bestCommonTopics = [];
+  let matchQuality = 'none';
   
   for (let i = 0; i < queue.length; i++) {
     const candidate = queue[i];
     
-    // Skip if same user (shouldn't happen but safety check)
+    // Skip if same user
     if (candidate.userId === userId) continue;
     
-    // Check if there's at least one common topic
+    // Check if there's at least one common topic (MANDATORY)
     if (!hasCommonTopic(topics, candidate.topics)) {
-      continue; // No common topic, skip
+      continue;
     }
     
     // Calculate skill difference
-    const candidateSkillScore = calculateSkillScore(candidate.questionStats);
-    const skillDiff = calculateSkillDifference(userSkillScore, candidateSkillScore);
+    const skillDiff = calculateSkillDifference(userSkillScore, candidate.skillScore);
     
-    // Find closest skill match among users with common topics
-    if (skillDiff < bestSkillDiff) {
+    // Check if within current skill threshold
+    if (skillDiff <= skillThreshold && skillDiff < bestSkillDiff) {
       bestSkillDiff = skillDiff;
       bestMatchIdx = i;
       bestCommonTopics = getCommonTopics(topics, candidate.topics);
+      
+      // Determine match quality
+      if (skillDiff <= INITIAL_SKILL_THRESHOLD * 0.3) {
+        matchQuality = 'excellent';
+      } else if (skillDiff <= INITIAL_SKILL_THRESHOLD * 0.7) {
+        matchQuality = 'good';
+      } else {
+        matchQuality = 'acceptable';
+      }
     }
   }
   
-  if (bestMatchIdx >= 0) {
-    // Found a match!
-    const partner = queue.splice(bestMatchIdx, 1)[0];
-    
-    // Clear timeouts
-    clearMatchTimeout(userId);
-    clearMatchTimeout(partner.userId);
-    
-    // Create session with matched topics
-    const session = createSession(
-      { userId, topics, questionStats },
-      { userId: partner.userId, topics: partner.topics, questionStats: partner.questionStats },
-      bestCommonTopics,
-      difficulty
-    );
-    
-    console.log(`Match found! Session: ${session.sessionId}, Common topics: ${bestCommonTopics.join(", ")}`);
-    
-    // Pass info to collaboration-service
-    await notifyCollabMatch({
-      sessionId: session.sessionId,
-      users: [userId, partner.userId],
-      matchedTopics: bestCommonTopics,
-      difficulty,
-    });
+  return {
+    found: bestMatchIdx >= 0,
+    matchIdx: bestMatchIdx,
+    skillDiff: bestSkillDiff,
+    commonTopics: bestCommonTopics,
+    quality: matchQuality,
+    threshold: skillThreshold
+  };
+}
 
-    // Notify both users
-    notifyUser(userId, {
-      type: "MATCHED",
-      sessionId: session.sessionId,
-      partnerId: partner.userId,
-      matchedTopics: bestCommonTopics,
-      difficulty,
-    });
-    
-    notifyUser(partner.userId, {
-      type: "MATCHED",
-      sessionId: session.sessionId,
-      partnerId: userId,
-      matchedTopics: bestCommonTopics,
-      difficulty,
-    });
-  } else {
-    // No match found, add to queue
-    queue.push({ userId, topics, difficulty, questionStats, timestamp });
-    console.log(`User ${userId} added to queue for difficulty:${difficultyKey}, topics:[${topics.join(", ")}]. Queue size: ${queue.length}`);
-    
-    // Set timeout
-    setMatchTimeout(userId, difficultyKey);
+// Calculate skill threshold that decays linearly over time
+function calculateSkillThreshold(timeInQueue) {
+  if (timeInQueue >= SKILL_RELAXATION_TIME) {
+    // After 1 minute, fully relaxed but capped at 300
+    return Number.MAX_SAFE_INTEGER;
   }
+  
+  // Linear decay from INITIAL_SKILL_THRESHOLD to MAX_SKILL_THRESHOLD over SKILL_RELAXATION_TIME
+  const decayProgress = timeInQueue / SKILL_RELAXATION_TIME;
+  const threshold = INITIAL_SKILL_THRESHOLD + (MAX_SKILL_THRESHOLD - INITIAL_SKILL_THRESHOLD) * decayProgress;
+  
+  return Math.round(threshold);
+}
+
+// Execute a match between two users
+async function executeMatch(queue, match, currentUser, difficultyKey, difficulty) {
+  const { matchIdx, skillDiff, commonTopics, quality } = match;
+  const { userId, topics, questionStats } = currentUser;
+  
+  // Remove matched user from queue
+  const partner = queue.splice(matchIdx, 1)[0];
+  
+  // Clear timeouts for both users
+  clearMatchTimeout(userId);
+  clearMatchTimeout(partner.userId);
+  
+  // Create session
+  const session = createSession(
+    { userId, topics, questionStats },
+    { userId: partner.userId, topics: partner.topics, questionStats: partner.questionStats },
+    commonTopics,
+    difficulty
+  );
+  
+  console.log(`🎯 MATCH FOUND! Quality: ${quality.toUpperCase()}`);
+  console.log(`   Session: ${session.sessionId}`);
+  console.log(`   Users: ${userId} ↔ ${partner.userId}`);
+  console.log(`   Awaiting confirmation from both users...`);
+  
+  // Store pending confirmation
+  pendingConfirmations.set(session.sessionId, {
+    user1: { userId, confirmed: false, userInfo: { topics, questionStats } },
+    user2: { userId: partner.userId, confirmed: false, userInfo: { topics: partner.topics, questionStats: partner.questionStats } },
+    matchInfo: { commonTopics, difficulty, quality, skillDiff },
+    createdAt: Date.now()
+  });
+  
+  // Set confirmation timeout
+  setConfirmationTimeout(session.sessionId);
+  
+  // Notify both users of potential match (not final match)
+  const user1Notification = {
+    type: "MATCH_FOUND",
+    sessionId: session.sessionId,
+    partnerId: partner.userId,
+    partnerInfo: {
+      userId: partner.userId,
+    },
+    matchedTopics: commonTopics,
+    difficulty,
+    matchQuality: quality,
+    skillDifference: skillDiff,
+    timeToConfirm: CONFIRMATION_TIMEOUT_MS
+  };
+  
+  const user2Notification = {
+    type: "MATCH_FOUND",
+    sessionId: session.sessionId,
+    partnerId: userId,
+    partnerInfo: {
+      userId: userId,
+    },
+    matchedTopics: commonTopics,
+    difficulty,
+    matchQuality: quality,
+    skillDifference: skillDiff,
+    timeToConfirm: CONFIRMATION_TIMEOUT_MS
+  };
+  
+  console.log(`Sending MATCH_FOUND to user ${userId}:`, user1Notification);
+  console.log(`Sending MATCH_FOUND to user ${partner.userId}:`, user2Notification);
+  
+  // Send notifications
+  notifyUser(userId, user1Notification);
+  notifyUser(partner.userId, user2Notification);
+}
+
+// Periodic matching for delayed matches
+function startPeriodicMatching() {
+  setInterval(async () => { // Add async here
+    const now = Date.now();
+    
+    // Check all difficulty queues for delayed matches
+    for (const [difficultyKey, queue] of pendingMatches.entries()) {
+      if (queue.length < 2) continue; // Need at least 2 users
+      
+      // Try to match users that have been waiting
+      for (let i = 0; i < queue.length; i++) {
+        const user = queue[i];
+        const timeInQueue = now - user.joinedAt;
+        
+        // Skip if user just joined (give immediate matches priority)
+        if (timeInQueue < 2000) continue;
+        
+        const match = findBestMatch(
+          queue.filter((_, idx) => idx !== i), // Exclude current user
+          {
+            userId: user.userId,
+            topics: user.topics,
+            userSkillScore: user.skillScore,
+            questionStats: user.questionStats
+          },
+          timeInQueue
+        );
+        
+        if (match.found) {
+          // Adjust match index since we filtered out current user
+          const actualMatchIdx = match.matchIdx >= i ? match.matchIdx + 1 : match.matchIdx;
+          
+          console.log(`⏰ Delayed match triggered for user ${user.userId} after ${Math.round(timeInQueue/1000)}s`);
+          console.log(`   Skill threshold was: ${match.threshold} (skill diff: ${match.skillDiff})`);
+          
+          // Remove current user from queue first
+          queue.splice(i, 1);
+          
+          // Adjust match index after removal
+          const finalMatchIdx = actualMatchIdx > i ? actualMatchIdx - 1 : actualMatchIdx;
+          
+          // Execute the match
+          await executeMatch(
+            queue, 
+            { ...match, matchIdx: finalMatchIdx }, 
+            user, 
+            difficultyKey, 
+            user.difficulty
+          );
+          
+          break; // Exit loop since queue was modified
+        }
+      }
+    }
+  }, MATCH_CHECK_INTERVAL);
 }
 
 function setMatchTimeout(userId, difficultyKey) {
@@ -145,21 +303,24 @@ function setMatchTimeout(userId, difficultyKey) {
   clearMatchTimeout(userId);
   
   const timeoutId = setTimeout(() => {
-    console.log(`Match timeout for user ${userId}`);
+    console.log(`⏱️  Match timeout for user ${userId} after ${MATCH_TIMEOUT_MS/1000}s`);
     
     // Remove from queue
     const queue = pendingMatches.get(difficultyKey);
     if (queue) {
       const idx = queue.findIndex((req) => req.userId === userId);
       if (idx >= 0) {
-        queue.splice(idx, 1);
+        const user = queue.splice(idx, 1)[0];
+        const timeInQueue = Date.now() - user.joinedAt;
+        console.log(`   User was in queue for ${Math.round(timeInQueue/1000)}s`);
       }
     }
     
-    // Notify user
+    // Notify user of timeout
     notifyUser(userId, {
       type: "MATCH_TIMEOUT",
-      message: "No match found within timeout period",
+      message: "No suitable match found within 2 minutes. Please try again.",
+      timeWaited: MATCH_TIMEOUT_MS
     });
     
     timeoutTrackers.delete(userId);
@@ -186,12 +347,196 @@ export function cancelMatchRequest(userId) {
   for (const [difficultyKey, queue] of pendingMatches.entries()) {
     const idx = queue.findIndex((req) => req.userId === userId);
     if (idx >= 0) {
-      queue.splice(idx, 1);
+      const user = queue.splice(idx, 1)[0];
+      const timeInQueue = Date.now() - user.joinedAt;
       removed = true;
-      console.log(`Removed user ${userId} from difficulty:${difficultyKey} queue`);
+      console.log(`❌ Cancelled: Removed user ${userId} from difficulty:${difficultyKey} queue after ${Math.round(timeInQueue/1000)}s`);
       break;
     }
   }
   
   return removed;
+}
+
+////////// Confirmation pop up /////////////
+
+export function confirmMatch(userId, sessionId, accepted) {
+  const confirmation = pendingConfirmations.get(sessionId);
+  if (!confirmation) {
+    return { error: 'Match confirmation not found or expired' };
+  }
+  
+  // Find which user is confirming
+  let confirmingUser, otherUser;
+  if (confirmation.user1.userId === userId) {
+    confirmingUser = confirmation.user1;
+    otherUser = confirmation.user2;
+  } else if (confirmation.user2.userId === userId) {
+    confirmingUser = confirmation.user2;
+    otherUser = confirmation.user1;
+  } else {
+    return { error: 'User not part of this match' };
+  }
+  
+  if (!accepted) {
+    // User rejected the match
+    console.log(`❌ Match rejected by user ${userId} for session ${sessionId}`);
+    
+    // Clear confirmation timeout
+    clearConfirmationTimeout(sessionId);
+    
+    // Remove from pending confirmations
+    pendingConfirmations.delete(sessionId);
+    
+    // Notify both users
+    notifyUser(confirmingUser.userId, {
+      type: "MATCH_REJECTED",
+      message: "You rejected the match",
+      sessionId
+    });
+    
+    notifyUser(otherUser.userId, {
+      type: "MATCH_REJECTED", 
+      message: "Your partner rejected the match",
+      sessionId
+    });
+    
+    // Put both users back in queue with higher priority
+    requeueUsers([confirmingUser, otherUser], confirmation.matchInfo.difficulty);
+    
+    return { success: true, status: 'rejected' };
+  }
+  
+  // User accepted the match
+  confirmingUser.confirmed = true;
+  console.log(`✅ Match accepted by user ${userId} for session ${sessionId}`);
+  
+  // Notify the other user about this acceptance
+  notifyUser(otherUser.userId, {
+    type: "PARTNER_CONFIRMED",
+    message: "Your partner has accepted the match",
+    sessionId,
+    waitingFor: "your confirmation"
+  });
+  
+  // Check if both users have confirmed
+  if (confirmation.user1.confirmed && confirmation.user2.confirmed) {
+    // Both confirmed - proceed with collaboration
+    console.log(`🎉 Both users confirmed! Starting collaboration session ${sessionId}`);
+    
+    // Clear confirmation timeout
+    clearConfirmationTimeout(sessionId);
+    
+    // Remove from pending confirmations
+    pendingConfirmations.delete(sessionId);
+    
+    // Create collaboration session
+    finalizeBothConfirmedMatch(sessionId, confirmation);
+    
+    return { success: true, status: 'both_confirmed' };
+  }
+  
+  return { success: true, status: 'waiting_for_partner' };
+}
+
+async function finalizeBothConfirmedMatch(sessionId, confirmation) {
+  const { user1, user2, matchInfo } = confirmation;
+  
+  // Notify collaboration service
+  await notifyCollabMatch({
+    sessionId,
+    users: [user1.userId, user2.userId],
+    matchedTopics: matchInfo.commonTopics,
+    difficulty: matchInfo.difficulty,
+  });
+  
+  // Notify both users - final match confirmed
+  notifyUser(user1.userId, {
+    type: "MATCH_CONFIRMED",
+    sessionId,
+    partnerId: user2.userId,
+    matchedTopics: matchInfo.commonTopics,
+    difficulty: matchInfo.difficulty,
+    matchQuality: matchInfo.quality,
+    message: "Both users confirmed! Starting collaboration..."
+  });
+  
+  notifyUser(user2.userId, {
+    type: "MATCH_CONFIRMED",
+    sessionId,
+    partnerId: user1.userId, 
+    matchedTopics: matchInfo.commonTopics,
+    difficulty: matchInfo.difficulty,
+    matchQuality: matchInfo.quality,
+    message: "Both users confirmed! Starting collaboration..."
+  });
+}
+
+function setConfirmationTimeout(sessionId) {
+  const timeoutId = setTimeout(() => {
+    console.log(`⏱️ Confirmation timeout for session ${sessionId}`);
+    
+    const confirmation = pendingConfirmations.get(sessionId);
+    if (confirmation) {
+      // Notify users about timeout
+      notifyUser(confirmation.user1.userId, {
+        type: "CONFIRMATION_TIMEOUT",
+        message: "Match confirmation timed out",
+        sessionId
+      });
+      
+      notifyUser(confirmation.user2.userId, {
+        type: "CONFIRMATION_TIMEOUT",
+        message: "Match confirmation timed out", 
+        sessionId
+      });
+      
+      // Put users back in queue
+      requeueUsers([confirmation.user1, confirmation.user2], confirmation.matchInfo.difficulty);
+      
+      // Remove from pending confirmations
+      pendingConfirmations.delete(sessionId);
+    }
+  }, CONFIRMATION_TIMEOUT_MS);
+  
+  // Store timeout ID in confirmation object
+  if (pendingConfirmations.has(sessionId)) {
+    pendingConfirmations.get(sessionId).timeoutId = timeoutId;
+  }
+}
+
+function clearConfirmationTimeout(sessionId) {
+  const confirmation = pendingConfirmations.get(sessionId);
+  if (confirmation && confirmation.timeoutId) {
+    clearTimeout(confirmation.timeoutId);
+    delete confirmation.timeoutId;
+  }
+}
+
+function requeueUsers(users, difficulty) {
+  // Put users back in queue with slightly higher priority
+  const difficultyKey = difficulty.toLowerCase();
+  const queue = pendingMatches.get(difficultyKey) || [];
+  
+  users.forEach(user => {
+    if (user.confirmed === false) { // Only requeue if they didn't confirm
+      queue.unshift({ // Add to front for priority
+        userId: user.userId,
+        topics: user.userInfo.topics,
+        difficulty,
+        questionStats: user.userInfo.questionStats,
+        timestamp: Date.now(),
+        skillScore: calculateSkillScore(user.userInfo.questionStats),
+        joinedAt: Date.now(),
+        requeued: true
+      });
+      
+      console.log(`🔄 Requeued user ${user.userId} after match timeout/rejection`);
+      
+      // Set timeout for requeued user
+      setMatchTimeout(user.userId, difficultyKey);
+    }
+  });
+  
+  pendingMatches.set(difficultyKey, queue);
 }

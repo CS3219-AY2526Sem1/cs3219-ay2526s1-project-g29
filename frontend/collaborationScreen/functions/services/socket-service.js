@@ -1,6 +1,6 @@
 import { COLLAB_CONFIG } from "../config.js";
 
-export function createSessionSocket({ sessionId, onReady, onParticipants, onEditorEvent, onCursorEvent, onError, onDisconnect }) {
+export function createSessionSocket({ sessionId, onReady, onParticipants, onEditorEvent, onCursorEvent, onPresence, onControlEvent, onError, onDisconnect }) {
   const url = `${COLLAB_CONFIG.wsBase}/${encodeURIComponent(sessionId)}`;
   let ws;
 
@@ -36,7 +36,7 @@ export function createSessionSocket({ sessionId, onReady, onParticipants, onEdit
           onParticipants?.(data.participants ?? []);
           break;
         case "presence":
-          // Presence events are informational; consumer may ignore
+          onPresence?.(data);
           break;
         case "message": {
           // payload may contain nested JSON like { type: 'editor-update', ... }
@@ -51,6 +51,12 @@ export function createSessionSocket({ sessionId, onReady, onParticipants, onEdit
               onEditorEvent?.(inner);
             } else if (inner.type === "cursor") {
               onCursorEvent?.({ ...inner, from: data.from });
+            } else if (
+              inner.type === 'language-request' ||
+              inner.type === 'language-response' ||
+              inner.type === 'language-change'
+            ) {
+              onControlEvent?.(inner);
             }
           }
           break;

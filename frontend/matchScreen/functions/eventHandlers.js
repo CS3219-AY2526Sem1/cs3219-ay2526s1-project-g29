@@ -1,13 +1,14 @@
 import { elements } from "./elements.js";
 import { config } from "./config.js";
 import { logout } from "./auth.js";
-import { requestMatch, cancelMatch } from "./matching.js";
+import { requestMatch, cancelMatch, confirmMatch } from "./matching.js";
 import { connectWebSocket, disconnectWebSocket } from "./websocket.js";
-import { showMessage, showMatchingStatus, hideMatchingStatus, updateFindMatchButton } from "./UIManager.js";
+import { showMessage, showMatchingStatus, hideMatchingStatus, updateFindMatchButton, showConfirmationDialog, hideConfirmationDialog, updateConfirmationDialog } from "./UIManager.js";
 
 // User Session State
 let currentUser = null;
 let matchRequestActive = false;
+let pendingConfirmation = null;
 
 export function setUserData(userId, profile) {
     currentUser = { userId, profile };
@@ -127,34 +128,140 @@ function handleWebSocketMessage(data) {
             break;
             
         case "MATCHED":
+            console.log("Received MATCHED (old flow)");
             handleMatchSuccess(data);
+            break;
+        
+        case "MATCH_FOUND":
+            console.log("Received MATCH_FOUND - showing confirmation dialog");
+            handleMatchFound(data);
+            break;
+            
+        case "PARTNER_CONFIRMED":
+            console.log("Partner confirmed match");
+            handlePartnerConfirmed(data);
+            break;
+            
+        case "MATCH_CONFIRMED":
+            console.log("Both users confirmed - proceeding to collaboration");
+            handleMatchConfirmed(data);
+            break;
+            
+        case "MATCH_REJECTED":
+            console.log("Match was rejected");
+            handleMatchRejected(data);
+            break;
+            
+        case "CONFIRMATION_TIMEOUT":
+            console.log("Match confirmation timed out");
+            handleConfirmationTimeout(data);
             break;
             
         case "MATCH_TIMEOUT":
+            console.log("Overall match search timed out");
             handleMatchTimeout();
             break;
             
         case "CANCELLED":
+            console.log("Match search cancelled");
             resetMatchState();
             break;
             
         default:
-            console.log("Unknown message type:", data.type);
+            console.warn("Unknown WebSocket message type:", data.type);
     }
 }
 
-// Match Success Handler
+function handleMatchFound(data) {
+    hideMatchingStatus();
+    pendingConfirmation = data;
+    showConfirmationDialog(data);
+}
+
+function handlePartnerConfirmed(data) {
+    updateConfirmationDialog("Your partner has accepted! Waiting for your confirmation...");
+}
+
+function handleMatchConfirmed(data) {
+    hideConfirmationDialog();
+    handleMatchSuccess(data); // Use existing success handler
+}
+
+function handleMatchRejected(data) {
+    hideConfirmationDialog();
+    pendingConfirmation = null;
+    showMessage(data.message, "info");
+    // Continue searching
+    showMatchingStatus("Continuing search for another match...");
+}
+
+function handleConfirmationTimeout(data) {
+    hideConfirmationDialog();
+    pendingConfirmation = null;
+    showMessage("Match confirmation timed out. Continuing search...", "warning");
+    showMatchingStatus("Searching for another match...");
+}
+
+// Match Timeout Handler
+function handleMatchTimeout() {
+    resetMatchState();
+    showMessage("No suitable match found within 2 minutes. Please try again with different criteria.", "error");
+}
+
+// Confirmation actions
+export async function handleAcceptMatch() {
+    if (!pendingConfirmation || !currentUser) return;
+    
+    try {
+        await confirmMatch(currentUser.userId, pendingConfirmation.sessionId, true);
+        updateConfirmationDialog("Match accepted! Waiting for partner confirmation...");
+        
+    } catch (error) {
+        console.error("Error accepting match:", error);
+        showMessage("Failed to accept match", "error");
+    }
+}
+
+export async function handleRejectMatch() {
+    if (!pendingConfirmation || !currentUser) return;
+    
+    try {
+        await confirmMatch(currentUser.userId, pendingConfirmation.sessionId, false);
+        hideConfirmationDialog();
+        pendingConfirmation = null;
+        showMessage("Match rejected. Continuing search...", "info");
+        showMatchingStatus("Searching for another match...");
+        
+    } catch (error) {
+        console.error("Error rejecting match:", error);
+        showMessage("Failed to reject match", "error");
+    }
+}
+
+// Enhanced Match Success Handler with quality feedback
 function handleMatchSuccess(data) {
     resetMatchState();
     
-    showMessage("Match found! Redirecting to collaboration...", "success");
+    // Show match quality feedback
+    let qualityMessage = "Match found!";
+    if (data.matchQuality === 'excellent') {
+        qualityMessage = "🎯 Excellent match found!";
+    } else if (data.matchQuality === 'good') {
+        qualityMessage = "👍 Good match found!";
+    } else if (data.matchQuality === 'acceptable') {
+        qualityMessage = "✅ Compatible match found!";
+    }
     
-    // Store match data for collaboration screen
+    showMessage(`${qualityMessage} Redirecting to collaboration...`, "success");
+    
+    // Store enhanced match data
     sessionStorage.setItem("currentMatch", JSON.stringify({
         sessionId: data.sessionId,
         partnerId: data.partnerId,
         matchedTopics: data.matchedTopics,
         difficulty: data.difficulty,
+        matchQuality: data.matchQuality,
+        skillDifference: data.skillDifference
     }));
     
     // Redirect to collaboration screen with sessionId
@@ -162,12 +269,6 @@ function handleMatchSuccess(data) {
         const url = `${config.routes.collaboration}?sessionId=${encodeURIComponent(data.sessionId)}`;
         navigateTo(url);
     }, 1500);
-}
-
-// Match Timeout Handler
-function handleMatchTimeout() {
-    resetMatchState();
-    showMessage("No match found. Please try again.", "error");
 }
 
 // Reset Match State

@@ -28,6 +28,15 @@ export async function logoutUser() {
             credentials: "include",
         }); 
         if (response.ok) {
+            try {
+                localStorage.setItem('auth:logout', String(Date.now()));
+                localStorage.removeItem('user');
+            } catch {}
+            try {
+                const bc = new BroadcastChannel('auth');
+                bc.postMessage({ type: 'logout' });
+                bc.close?.();
+            } catch {}
             redirectToLogin();
         } else {
             console.error("Logout failed");

@@ -50,6 +50,15 @@ export async function logout() {
             method: "POST",
             credentials: "include",
         });
+        try {
+            localStorage.setItem('auth:logout', String(Date.now()));
+            localStorage.removeItem('user');
+        } catch { }
+        try {
+            const bc = new BroadcastChannel('auth');
+            bc.postMessage({ type: 'logout' });
+            bc.close?.();
+        } catch { }
     } catch (error) {
         console.error("Logout error:", error);
     } finally {

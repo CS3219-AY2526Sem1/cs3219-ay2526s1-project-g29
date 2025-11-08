@@ -13,10 +13,6 @@
     <div class="collab-layout">
       <header class="collab-header">
         <div class="logo">PeerPrep</div>
-        <nav class="collab-nav">
-          <a href="../dashboardScreen/dashboardScreen.html" class="nav-link">Dashboard</a>
-          <a href="../historyScreen/historyScreen.html" class="nav-link">History</a>
-        </nav>
       </header>
 
       <main class="collab-content">
@@ -36,9 +32,102 @@
         </section>
 
         <section class="editor-panel">
+          <div class="editor-header">
+            <div class="language-group">
+              <select id="languageSelect" class="language-select">
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="php">PHP</option>
+              </select>
+            </div>
+            <div class="editor-actions">
+              <button
+                type="button"
+                class="ai-explain-btn"
+                id="aiExplainBtn"
+                title="Explain selected code with AI"
+              >
+                ✨ Explain Code
+              </button>
+            </div>
+          </div>
           <div id="editorContainer" class="editor-container"></div>
         </section>
+
+        <aside class="ai-panel" id="aiPanel">
+          <div class="ai-panel-header">
+            <h3>AI Assistant</h3>
+            <button
+              type="button"
+              class="close-btn"
+              id="aiCloseBtn"
+              title="Close AI panel"
+            >
+              ×
+            </button>
+          </div>
+          <div class="ai-panel-content">
+            <div id="aiOutput" class="ai-output"> 
+              <!-- Default state -->
+              <div class="ai-placeholder">
+                Select code in the editor and click "Explain Code" to get AI
+                assistance.
+              </div>
+
+              <!-- Loading state -->
+              <div class="ai-loading" style="display: none">
+                <div class="ai-loading-spinner"></div>
+                <div>Generating explanation...</div>
+              </div>
+
+              <!-- Error state -->
+              <div class="ai-error" style="display: none">
+                <strong>Error:</strong> <span class="ai-error-message"></span>
+              </div>
+
+              <!-- Explanation state -->
+              <div class="ai-explanation" style="display: none"></div>
+            </div>
+          </div>
+        </aside>
       </main>
+
+      <div id="messageContainer" class="message-container hidden">
+        <div id="messageText" class="message-text"></div>
+      </div>
+
+      <!-- Language Change Request -->
+      <div id="langRequestModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langRequestText">
+        <div class="modal-card">
+          <p id="langRequestText" class="modal-text"></p>
+          <div class="modal-actions">
+            <button type="button" id="langAcceptBtn" class="btn-primary">Accept</button>
+            <button type="button" id="langRejectBtn" class="btn-primary danger">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waiting Modal -->
+      <div id="langWaitingModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langWaitingText">
+        <div class="modal-card">
+          <h3 id="langWaitingText" class="modal-title">Waiting for partner confirmation...</h3>
+        </div>
+      </div>
+
+      <!-- Partner Left Modal -->
+      <div id="partnerLeftModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="partnerLeftText">
+        <div class="modal-card">
+          <h3 class="modal-title">Session Notice</h3>
+          <p id="partnerLeftText" class="modal-text">Your partner has left the session. Continue?</p>
+          <div class="modal-actions">
+            <button type="button" id="partnerLeftYesBtn" class="btn-primary">Yes</button>
+            <button type="button" id="partnerLeftNoBtn" class="btn-primary danger">No</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <script type="module" src="functions/main.js"></script>
