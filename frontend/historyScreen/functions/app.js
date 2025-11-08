@@ -7,13 +7,14 @@ import {
     getUserHistory,
 } from "./auth.js";
 import { renderHistoryItems, filterHistory } from "./history.js";
-import { DIFFICULTIES, TOPICS } from "../../shared/filters.js";
+import { DIFFICULTIES, LANGUAGES, TOPICS } from "../../shared/filters.js";
 import { config } from "./config.js";
 
 let questionsAttempted = [];
 let historyData = [];
 let currentFilters = {
     difficulty: "all",
+    language: "all",
     topic: "all",
     search: "",
 };
@@ -49,6 +50,16 @@ function addFiltersToUI() {
         difficultyFilter.appendChild(option);
     });
 
+    // Add language filters to UI
+    const languageFilter = elements.languageFilter;
+    languageFilter.innerHTML = '<option value="all">All Languages</option>';
+    LANGUAGES.forEach((language) => {
+        const option = document.createElement("option");
+        option.value = language.value;
+        option.textContent = language.label;
+        languageFilter.appendChild(option);
+    });
+
     // Add topic filters to UI
     const topicFilter = elements.topicFilter;
     topicFilter.innerHTML = '<option value="all">All Topics</option>';
@@ -81,6 +92,12 @@ function setupEventListeners() {
     // Difficulty Filters
     elements.difficultyFilter.addEventListener("change", (e) => {
         currentFilters.difficulty = e.target.value;
+        applyFilters();
+    });
+
+    // Language Filters
+    elements.languageFilter.addEventListener("change", (e) => {
+        currentFilters.language = e.target.value;
         applyFilters();
     });
 

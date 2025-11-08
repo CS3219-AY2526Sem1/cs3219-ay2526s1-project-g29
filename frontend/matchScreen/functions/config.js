@@ -29,7 +29,7 @@ export const config = {
     settings: {
         messageTimeout: 5000,
         matchTimeout: 30000,
-        maxTopics: 19,
+        maxTopics: 16,
     },
 
     // Validation Rules
@@ -50,15 +50,12 @@ export const config = {
         { value: "stacks", label: "Stacks" },
         { value: "queues", label: "Queues" },
         { value: "trees", label: "Trees" },
-        { value: "graphs", label: "Graphs" },
-        { value: "sorting", label: "Sorting" },
         { value: "searching", label: "Searching" },
         { value: "dynamic-programming", label: "Dynamic Programming" },
         { value: "recursion", label: "Recursion" },
-        { value: "backtracking", label: "Backtracking" },
-        { value: "greedy", label: "Greedy Algorithms" },
         { value: "bit-manipulation", label: "Bit Manipulation" },
         { value: "math", label: "Math" },
         { value: "matrix", label: "Matrix" },
+        { value: "databases", label: "Databases" },
     ],
 };

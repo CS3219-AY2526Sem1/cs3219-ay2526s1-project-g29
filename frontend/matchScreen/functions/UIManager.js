@@ -59,7 +59,7 @@ export function updateFindMatchButton() {
 
     const difficulty = elements.getDifficulty();
     const topics = elements.getTopics();
-    const maxTopics = config.settings?.maxTopics || 19;
+    const maxTopics = config.settings?.maxTopics || 16;
 
     const isValid = difficulty && topics.length > 0 && topics.length <= maxTopics;
 
@@ -80,16 +80,16 @@ export function showConfirmationDialog(matchData) {
     if (!elements.confirmationDialog) {
         createConfirmationDialog();
     }
-    
+
     // Update dialog content
     const partnerInfo = elements.confirmationDialog.querySelector('#partnerUserId');
     const matchDetails = elements.confirmationDialog.querySelector('#matchDetails');
     const qualityBadge = elements.confirmationDialog.querySelector('#qualityBadge');
-    
+
     if (partnerInfo) {
         partnerInfo.textContent = matchData.partnerId;
     }
-    
+
     if (matchDetails) {
         matchDetails.innerHTML = `
             <p><strong>Topics:</strong> ${matchData.matchedTopics.join(', ')}</p>
@@ -97,16 +97,16 @@ export function showConfirmationDialog(matchData) {
             <p><strong>Skill Difference:</strong> ${matchData.skillDifference}</p>
         `;
     }
-    
+
     if (qualityBadge) {
         qualityBadge.textContent = matchData.matchQuality;
         qualityBadge.className = `quality-badge ${matchData.matchQuality}`;
     }
-    
+
     // Show dialog
     elements.confirmationDialog.classList.remove('hidden');
     elements.confirmationDialog.classList.add('show');
-    
+
     // Start countdown
     startConfirmationCountdown(matchData.timeToConfirm);
 }
@@ -132,7 +132,7 @@ function createConfirmationDialog() {
     const dialog = document.createElement('div');
     dialog.id = 'confirmationDialog';
     dialog.className = 'confirmation-dialog hidden';
-    
+
     dialog.innerHTML = `
         <div class="confirmation-card">
             <div class="confirmation-header">
@@ -169,18 +169,18 @@ function createConfirmationDialog() {
             </div>
         </div>
     `;
-    
+
     document.body.appendChild(dialog);
-    
+
     // Add event listeners
     dialog.querySelector('#acceptMatchBtn').addEventListener('click', () => {
         import('./eventHandlers.js').then(module => module.handleAcceptMatch());
     });
-    
+
     dialog.querySelector('#rejectMatchBtn').addEventListener('click', () => {
         import('./eventHandlers.js').then(module => module.handleRejectMatch());
     });
-    
+
     elements.confirmationDialog = dialog;
 }
 
@@ -189,14 +189,14 @@ let countdownInterval;
 function startConfirmationCountdown(timeMs) {
     let timeLeft = Math.floor(timeMs / 1000);
     const countdownElement = document.getElementById('countdownTimer');
-    
+
     if (countdownElement) {
         countdownElement.textContent = timeLeft;
-        
+
         countdownInterval = setInterval(() => {
             timeLeft--;
             countdownElement.textContent = timeLeft;
-            
+
             if (timeLeft <= 0) {
                 stopConfirmationCountdown();
             }

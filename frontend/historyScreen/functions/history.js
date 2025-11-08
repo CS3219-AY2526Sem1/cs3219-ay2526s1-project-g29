@@ -252,6 +252,14 @@ export function filterHistory(historyData, filters) {
             return false;
         }
 
+        // Language filter
+        if (
+            filters.language !== "all" &&
+            item.language?.toLowerCase() !== filters.language.toLowerCase()
+        ) {
+            return false;
+        }
+
         // Topic filter
         if (filters.topic !== "all") {
             const hasTopics = item.topics && Array.isArray(item.topics);
