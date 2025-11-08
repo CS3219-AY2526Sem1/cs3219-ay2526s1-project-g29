@@ -206,6 +206,8 @@ async function handleConnect(refs) {
         }
 
         state.participants = next;
+        // Update partner connection flag based on count
+        state.partnerConnected = (next.length >= 2);
         renderParticipants(refs, next);
       },
       onControlEvent: (evt) => {
@@ -224,6 +226,16 @@ async function handleConnect(refs) {
           const leaverId = evt?.user?.id;
           if (leaverId && leaverId !== state.currentUser?.id) {
             // Partner left explicitly
+            state.partnerConnected = false;
+            // Cancel any pending language change request waiting on partner
+            if (state.langPending && state.langPending.requestedBy === 'me') {
+              try { refs.langWaitingModal?.classList.add('hidden'); } catch { }
+              if (refs.languageSelect) {
+                refs.languageSelect.disabled = false;
+                refs.languageSelect.value = state.language;
+              }
+              state.langPending = null;
+            }
             showPartnerLeftPrompt(refs, 'Your partner');
           }
         }
@@ -386,6 +398,16 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
 
 function showPartnerLeftPrompt(refs, displayName) {
   if (!refs.partnerLeftModal) return;
+  state.partnerConnected = false;
+  // If we were waiting for partner to confirm a language change, cancel that wait
+  if (state.langPending && state.langPending.requestedBy === 'me') {
+    try { refs.langWaitingModal?.classList.add('hidden'); } catch { }
+    if (refs.languageSelect) {
+      refs.languageSelect.disabled = false;
+      refs.languageSelect.value = state.language;
+    }
+    state.langPending = null;
+  }
   const textEl = refs.partnerLeftText;
   if (textEl) {
     textEl.textContent = `${displayName} has left the session. Continue?`;
@@ -408,7 +430,15 @@ function onLocalLanguageSelected(refs, language) {
     if (refs.languageSelect) refs.languageSelect.value = state.language;
     return;
   }
-  // Request partner confirmation
+  // If no partner connected, apply immediately without confirmation
+  const alone = !state.partnerConnected || (Array.isArray(state.participants) && state.participants.length < 2);
+  if (alone) {
+    applyLanguageChange(refs, language);
+    showMessage(`Language changed to ${language}.`, 'success');
+    setTimeout(() => hideMessage(), 3000);
+    return;
+  }
+  // Otherwise, request partner confirmation
   const username = state.currentUser?.username || 'You';
   try {
     state.socket?.send({ type: 'language-request', language, from: state.currentUser?.id, username });
