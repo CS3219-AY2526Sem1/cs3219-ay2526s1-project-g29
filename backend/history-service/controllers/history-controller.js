@@ -89,7 +89,34 @@ async function getAllUserHistory(req, res) {
     }
 }
 
+async function getSessionHistory(req, res) {
+    try {
+        const { sessionId } = req.params;
+        if (!sessionId) {
+            return res.status(400).json({ message: 'sessionId is required' });
+        }
+        const history = await History.findOne({ sessionId });
+        if (!history) {
+            return res.status(404).json({ message: 'No history for session' });
+        }
+        return res.status(200).json({
+            message: 'Session history fetched successfully',
+            data: {
+                sessionId: history.sessionId,
+                latestCode: history.latestCode || '',
+                language: history.language || 'javascript',
+                questionId: history.questionId,
+                updatedAt: history.updatedAt
+            }
+        });
+    } catch (err) {
+        console.error('Error fetching session history:', err);
+        return res.status(500).json({ message: 'Failed to fetch session history' });
+    }
+}
+
 module.exports = {
     saveHistory,
-    getAllUserHistory
+    getAllUserHistory,
+    getSessionHistory
 };

@@ -202,7 +202,7 @@ function schedulePartnerWait(sessionId) {
     return;
   }
 
-  // Start or reset a short wait timer (3s) to allow partner to connect
+  // Start or reset a short wait timer to allow partner to reconnect (page refresh grace)
   const existing = partnerWaitTimers.get(sessionId);
   if (existing) clearTimeout(existing);
 
@@ -219,7 +219,7 @@ function schedulePartnerWait(sessionId) {
       }
       try { closeSession(sessionId); } catch {}
     }
-  }, 1500);
+  }, 3000);
 
   partnerWaitTimers.set(sessionId, timer);
 }

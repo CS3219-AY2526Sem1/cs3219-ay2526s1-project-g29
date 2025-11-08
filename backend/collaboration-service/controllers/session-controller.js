@@ -40,6 +40,28 @@ export function getSessionHandler(req, res) {
   return res.status(200).json({ session: toPublicSession(s) });
 }
 
+export async function restoreSessionHandler(req, res) {
+  const { id } = req.params;
+  const s = getSession(id);
+  if (!s) return res.status(404).json({ message: 'session not found' });
+
+  try {
+    const response = await axios.get(`${env.historyServiceUrl}/api/history/session/${encodeURIComponent(id)}`);
+    const data = response?.data?.data || null;
+    if (!data) return res.status(404).json({ message: 'no history for session' });
+    return res.status(200).json({
+      sessionId: id,
+      latestCode: data.latestCode || '',
+      language: data.language || 'javascript',
+      questionId: data.questionId || null,
+      updatedAt: data.updatedAt
+    });
+  } catch (error) {
+    console.error('restoreSessionHandler error:', error?.message || error);
+    return res.status(500).json({ message: 'failed to restore session' });
+  }
+}
+
 export async function autosaveHandler(req, res) {
   const { id } = req.params;
   const user = req.user;

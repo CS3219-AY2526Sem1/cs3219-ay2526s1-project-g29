@@ -1,6 +1,7 @@
 // Chat functionality for collaboration screen
 let chatSocket = null;
 let currentUserId = null;
+let sessionId = null;
 let chatOpen = false;
 let unreadCount = 0;
 
@@ -16,6 +17,7 @@ const elements = {
 export function initializeChat(socket, userId) {
   chatSocket = socket;
   currentUserId = userId;
+  sessionId = new URLSearchParams(window.location.search).get('sessionId') || null;
   
   // Get DOM elements
   elements.panel = document.getElementById('chatPanel');
@@ -54,6 +56,9 @@ export function initializeChat(socket, userId) {
     });
   }
   
+  // Load persisted chat messages for this session
+  try { loadPersistedMessages(); } catch {}
+
   console.log('Chat initialized');
 }
 
@@ -97,6 +102,7 @@ export function handleChatMessage(data) {
   `;
   
   elements.messages.appendChild(messageEl);
+  try { persistMessage({ from, username, message, timestamp: timestamp || new Date().toISOString() }); } catch {}
   
   // Scroll to bottom
   scrollToBottom();
@@ -171,6 +177,8 @@ function sendMessage() {
       type: 'chat',
       message: message
     });
+    // Persist locally for refresh
+    try { persistMessage({ from: currentUserId, username: 'You', message, timestamp: new Date().toISOString() }); } catch {}
     
     // Clear input
     elements.input.value = '';
@@ -260,6 +268,49 @@ function escapeHtml(text) {
   const div = document.createElement('div');
   div.textContent = text;
   return div.innerHTML;
+}
+
+function persistMessage(msg) {
+  if (!sessionId) return;
+  const key = `chat:${sessionId}`;
+  const list = JSON.parse(localStorage.getItem(key) || '[]');
+  list.push({
+    from: msg.from,
+    username: msg.username,
+    message: msg.message,
+    timestamp: msg.timestamp,
+  });
+  // Cap to last 200 messages
+  const trimmed = list.slice(-200);
+  localStorage.setItem(key, JSON.stringify(trimmed));
+}
+
+function loadPersistedMessages() {
+  if (!sessionId || !elements.messages) return;
+  const key = `chat:${sessionId}`;
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(key) || '[]'); } catch {}
+  if (!Array.isArray(list) || list.length === 0) return;
+  // Remove empty state
+  const emptyState = elements.messages.querySelector('.chat-empty-state');
+  if (emptyState) emptyState.remove();
+  // Render in order
+  for (const m of list) {
+    const own = m.from && currentUserId && String(m.from) === String(currentUserId);
+    const el = document.createElement('div');
+    el.className = own ? 'chat-message own' : 'chat-message';
+    const label = own ? 'You' : (m.username || 'Anonymous');
+    const time = formatTime(m.timestamp);
+    el.innerHTML = `
+      <div class="chat-message-header">
+        <span class="chat-message-sender">${escapeHtml(label)}</span>
+        <span class="chat-message-time">${time}</span>
+      </div>
+      <div class="chat-message-content">${escapeHtml(m.message || '')}</div>
+    `;
+    elements.messages.appendChild(el);
+  }
+  scrollToBottom();
 }
 
 // Export for cleanup
