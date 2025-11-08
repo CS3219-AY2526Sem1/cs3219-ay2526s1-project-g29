@@ -62,25 +62,26 @@ export function handleChatMessage(data) {
   
   if (!message || typeof message !== 'string') return;
   
+  // Ignore messages from yourself, already displayed them locally
+  if (from === currentUserId) {
+    console.log('Ignoring own message from server (already displayed locally)');
+    return;
+  }
+  
   // Remove empty state if present
   const emptyState = elements.messages.querySelector('.chat-empty-state');
   if (emptyState) {
     emptyState.remove();
   }
   
-  // Create message element
+  // Create message element for partner's message
   const messageEl = document.createElement('div');
   messageEl.className = 'chat-message';
   
-  // Mark own messages
-  if (from === currentUserId) {
-    messageEl.classList.add('own');
-  } else {
-    // Increment unread count if chat is closed
-    if (!chatOpen) {
-      unreadCount++;
-      updateUnreadBadge();
-    }
+  // Increment unread count if chat is closed
+  if (!chatOpen) {
+    unreadCount++;
+    updateUnreadBadge();
   }
   
   // Format timestamp
@@ -142,6 +143,29 @@ function sendMessage() {
   if (!message) return;
   
   try {
+    // **Display message immediately for sender**
+    const messageEl = document.createElement('div');
+    messageEl.className = 'chat-message own';
+    
+    const time = formatTime(new Date());
+    
+    messageEl.innerHTML = `
+      <div class="chat-message-header">
+        <span class="chat-message-sender">You</span>
+        <span class="chat-message-time">${time}</span>
+      </div>
+      <div class="chat-message-content">${escapeHtml(message)}</div>
+    `;
+    
+    // Remove empty state if present
+    const emptyState = elements.messages.querySelector('.chat-empty-state');
+    if (emptyState) {
+      emptyState.remove();
+    }
+    
+    elements.messages.appendChild(messageEl);
+    scrollToBottom();
+    
     // Send via WebSocket
     chatSocket.send({
       type: 'chat',
