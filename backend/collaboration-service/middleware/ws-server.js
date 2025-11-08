@@ -97,8 +97,33 @@ export function attachWebsocket(server) {
     schedulePartnerWait(sessionId);
 
     ws.on('message', (msg) => {
-      // Broadcast messages to the other peer(s)
-      broadcast(sessionId, { type: 'message', from: user.id, payload: msg.toString() }, ws);
+      let parsedMsg;
+      try {
+        parsedMsg = JSON.parse(msg.toString());
+      } catch {
+        // If it's not JSON, treat as legacy message
+        broadcast(sessionId, { type: 'message', from: user.id, payload: msg.toString() }, ws);
+        return;
+      }
+
+      // Handle different message types
+      switch (parsedMsg.type) {
+        case 'chat':
+          // Broadcast chat message to all participants
+          broadcast(sessionId, {
+            type: 'chat',
+            from: user.id,
+            username: user.username,
+            message: parsedMsg.message,
+            timestamp: new Date().toISOString()
+          }, ws);
+          break;
+        
+        default:
+          // Legacy message handling (editor updates, cursor, etc.)
+          broadcast(sessionId, { type: 'message', from: user.id, payload: msg.toString() }, ws);
+          break;
+      }
     });
 
     ws.on('close', () => {

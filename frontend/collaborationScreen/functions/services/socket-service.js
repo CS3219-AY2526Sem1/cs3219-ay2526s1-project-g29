@@ -1,6 +1,6 @@
 import { COLLAB_CONFIG } from "../config.js";
 
-export function createSessionSocket({ sessionId, onReady, onParticipants, onEditorEvent, onCursorEvent, onPresence, onControlEvent, onError, onDisconnect }) {
+export function createSessionSocket({ sessionId, onReady, onParticipants, onEditorEvent, onCursorEvent, onPresence, onControlEvent, onChatMessage, onError, onDisconnect }) {
   const url = `${COLLAB_CONFIG.wsBase}/${encodeURIComponent(sessionId)}`;
   let ws;
 
@@ -61,6 +61,9 @@ export function createSessionSocket({ sessionId, onReady, onParticipants, onEdit
           }
           break;
         }
+        case "chat":
+          onChatMessage?.(data);
+          break;
         default:
           break;
       }

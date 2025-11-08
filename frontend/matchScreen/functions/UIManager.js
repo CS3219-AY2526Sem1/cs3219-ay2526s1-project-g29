@@ -82,12 +82,12 @@ export function showConfirmationDialog(matchData) {
     }
 
     // Update dialog content
-    const partnerInfo = elements.confirmationDialog.querySelector('#partnerUserId');
+    const partnerInfo = elements.confirmationDialog.querySelector('#partnerUsername');
     const matchDetails = elements.confirmationDialog.querySelector('#matchDetails');
     const qualityBadge = elements.confirmationDialog.querySelector('#qualityBadge');
 
     if (partnerInfo) {
-        partnerInfo.textContent = matchData.partnerId;
+        partnerInfo.textContent = matchData.partnerUsername || matchData.partnerInfo?.username || 'Anonymous';
     }
 
     if (matchDetails) {
@@ -143,7 +143,7 @@ function createConfirmationDialog() {
             <div class="confirmation-content">
                 <div class="partner-info">
                     <h3>Partner Information</h3>
-                    <p><strong>User ID:</strong> <span id="partnerUserId">loading...</span></p>
+                    <p><strong>Username:</strong> <span id="partnerUsername">loading...</span></p>
                     <div id="matchDetails">
                         <!-- Match details will be inserted here -->
                     </div>

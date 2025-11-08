@@ -180,6 +180,46 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
   clearMatchTimeout(userId);
   clearMatchTimeout(partner.userId);
   
+  // Fetch usernames from user service
+  const userServiceUrl = process.env.USER_SERVICE_URL || "http://user-service:8004";
+  
+  let user1Username = 'Anonymous';
+  let user2Username = 'Anonymous';
+  
+  try {
+    // Fetch user 1 details
+    const user1Response = await fetch(`${userServiceUrl}/users/internal/users/${userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
+        'X-Internal-Service': 'matching-service'
+      }
+    });
+    
+    if (user1Response.ok) {
+      const user1Data = await user1Response.json();
+      user1Username = user1Data.data?.username || user1Data.username || 'Anonymous';
+    }
+    
+    // Fetch user 2 details
+    const user2Response = await fetch(`${userServiceUrl}/users/internal/users/${partner.userId}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
+        'X-Internal-Service': 'matching-service'
+      }
+    });
+    
+    if (user2Response.ok) {
+      const user2Data = await user2Response.json();
+      user2Username = user2Data.data?.username || user2Data.username || 'Anonymous';
+    }
+  } catch (error) {
+    console.error('Error fetching usernames:', error);
+  }
+  
   // Create session
   const session = createSession(
     { userId, topics, questionStats },
@@ -190,13 +230,23 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
   
   console.log(`🎯 MATCH FOUND! Quality: ${quality.toUpperCase()}`);
   console.log(`   Session: ${session.sessionId}`);
-  console.log(`   Users: ${userId} ↔ ${partner.userId}`);
+  console.log(`   Users: ${user1Username} (${userId}) ↔ ${user2Username} (${partner.userId})`);
   console.log(`   Awaiting confirmation from both users...`);
   
-  // Store pending confirmation
+  // Store pending confirmation with usernames
   pendingConfirmations.set(session.sessionId, {
-    user1: { userId, confirmed: false, userInfo: { topics, questionStats } },
-    user2: { userId: partner.userId, confirmed: false, userInfo: { topics: partner.topics, questionStats: partner.questionStats } },
+    user1: { 
+      userId, 
+      username: user1Username,
+      confirmed: false, 
+      userInfo: { topics, questionStats } 
+    },
+    user2: { 
+      userId: partner.userId,
+      username: user2Username,
+      confirmed: false, 
+      userInfo: { topics: partner.topics, questionStats: partner.questionStats } 
+    },
     matchInfo: { commonTopics, difficulty, quality, skillDiff },
     createdAt: Date.now()
   });
@@ -209,8 +259,10 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
     type: "MATCH_FOUND",
     sessionId: session.sessionId,
     partnerId: partner.userId,
+    partnerUsername: user2Username,
     partnerInfo: {
       userId: partner.userId,
+      username: user2Username,
     },
     matchedTopics: commonTopics,
     difficulty,
@@ -223,8 +275,10 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
     type: "MATCH_FOUND",
     sessionId: session.sessionId,
     partnerId: userId,
+    partnerUsername: user1Username,
     partnerInfo: {
       userId: userId,
+      username: user1Username,
     },
     matchedTopics: commonTopics,
     difficulty,
@@ -233,8 +287,8 @@ async function executeMatch(queue, match, currentUser, difficultyKey, difficulty
     timeToConfirm: CONFIRMATION_TIMEOUT_MS
   };
   
-  console.log(`Sending MATCH_FOUND to user ${userId}:`, user1Notification);
-  console.log(`Sending MATCH_FOUND to user ${partner.userId}:`, user2Notification);
+  console.log(`Sending MATCH_FOUND to ${user1Username} (${userId})`);
+  console.log(`Sending MATCH_FOUND to ${user2Username} (${partner.userId})`);
   
   // Send notifications
   notifyUser(userId, user1Notification);

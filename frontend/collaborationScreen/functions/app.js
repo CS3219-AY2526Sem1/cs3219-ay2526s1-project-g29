@@ -6,6 +6,7 @@ import { resolveUserSession } from "./services/user-service.js";
 import { getDomRefs, updateStatus, renderParticipants, setConnectionState, renderQuestion } from "./utils/dom.js";
 import { showMessage, hideMessage } from "./utils/message.js";
 import { initializeAIPanel } from "./utils/ai-panel.js";
+import { initializeChat, handleChatMessage, cleanupChat } from "./utils/chat.js";
 
 const state = {
   editor: null,
@@ -188,6 +189,9 @@ async function handleConnect(refs) {
           }, 1500);
         }
 
+        // Initialize chat after connection
+        initializeChat(socket, user.id);
+        
         startAutosave();
       },
       onParticipants: (participants) => {
@@ -242,6 +246,10 @@ async function handleConnect(refs) {
         } else {
           handleDisconnect(refs, { manual: false });
         }
+      },
+      // Add onChatMessage handler
+      onChatMessage: (data) => {
+        handleChatMessage(data);
       },
     });
   } catch (error) {
@@ -348,6 +356,9 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
       console.error("Error tearing down realtime session", error);
     }
   }
+
+  // Cleanup chat
+  cleanupChat();
 
   state.socket = null;
   state.realtime = null;
