@@ -146,6 +146,11 @@ function handleWebSocketMessage(data) {
             console.log("Both users confirmed - proceeding to collaboration");
             handleMatchConfirmed(data);
             break;
+        
+        case "MATCH_ERROR_NO_QUESTION":
+            console.log("Match error: no question found");
+            handleNoQuestionError(data);
+            break;
             
         case "MATCH_REJECTED":
             console.log("Match was rejected");
@@ -185,6 +190,15 @@ function handlePartnerConfirmed(data) {
 function handleMatchConfirmed(data) {
     hideConfirmationDialog();
     handleMatchSuccess(data); // Use existing success handler
+}
+
+function handleNoQuestionError(data) {
+    // Close any confirmation UI and reset matching state
+    hideConfirmationDialog();
+    resetMatchState();
+    // Show error message
+    const msg = data.message || "Error: No question found for selected difficulty and topics. Please try again with different matching criteria.";
+    showMessage(msg, "error");
 }
 
 function handleMatchRejected(data) {

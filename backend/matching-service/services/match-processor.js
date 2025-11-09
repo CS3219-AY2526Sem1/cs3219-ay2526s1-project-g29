@@ -497,12 +497,28 @@ async function finalizeBothConfirmedMatch(sessionId, confirmation) {
   const { user1, user2, matchInfo } = confirmation;
   
   // Notify collaboration service
-  await notifyCollabMatch({
+  const ok = await notifyCollabMatch({
     sessionId,
     users: [user1.userId, user2.userId],
     matchedTopics: matchInfo.commonTopics,
     difficulty: matchInfo.difficulty,
   });
+  
+  // No question found
+  if (!ok) {
+    const msg = "Error: No question found for selected difficulty and topics. Please try again with different matching criteria.";
+    notifyUser(user1.userId, {
+      type: "MATCH_ERROR_NO_QUESTION",
+      message: msg,
+      sessionId,
+    });
+    notifyUser(user2.userId, {
+      type: "MATCH_ERROR_NO_QUESTION",
+      message: msg,
+      sessionId,
+    });
+    return;
+  }
   
   // Notify both users - final match confirmed
   notifyUser(user1.userId, {

@@ -150,7 +150,13 @@ async function handleConnect(refs) {
           socket,
         });
 
-        // Send initial full content to sync
+        // Attempt to restore code/language then broadcast
+        try {
+          await restoreFromServer();
+        } catch (e) {
+          console.warn('Restore not available:', e?.message || e);
+        }
+
         try { state.realtime.sendFull(); } catch { }
 
         state.editor?.instance?.layout?.();
@@ -159,25 +165,7 @@ async function handleConnect(refs) {
         const other = (state.participants || []).find((p) => p.id !== meId);
         state.partnerConnected = Boolean(other && other.username && other.username !== 'anonymous');
 
-        try {
-          const initialCode = state.editor?.model?.getValue() || '';
-          const language = state.editor?.model?.getLanguageId() || 'javascript';
-
-          await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/autosave`, {
-            method: "POST",
-            credentials: "include",
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              code: initialCode,
-              language
-            })
-          });
-          console.log('Initial history saved on connection');
-        } catch (error) {
-          console.error('Initial save failed:', error);
-        }
+        // Do not autosave immediately on connect to avoid overwriting restored content
 
         // Grace period for partner to join; if they don't, redirect back
         if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
@@ -202,10 +190,12 @@ async function handleConnect(refs) {
         if (state.partnerConnected && prev.length > next.length && next.length >= 1) {
           const removed = prev.find((p) => !next.some((n) => n.id === p.id));
           const display = removed?.username || "Your partner";
-          showPartnerLeftPrompt(refs, display);
+          schedulePartnerLeftPrompt(refs, display);
         }
 
         state.participants = next;
+        // Update partner connection flag based on count
+        state.partnerConnected = (next.length >= 2);
         renderParticipants(refs, next);
       },
       onControlEvent: (evt) => {
@@ -218,13 +208,25 @@ async function handleConnect(refs) {
             state.partnerConnected = true;
             if (state.partnerJoinTimer) { try { clearTimeout(state.partnerJoinTimer); } catch { } }
             state.partnerJoinTimer = null;
+            // Partner reconnected within grace period; cancel any pending prompt
+            cancelPartnerLeftPrompt();
           }
         }
         if (evt?.event === 'leave') {
           const leaverId = evt?.user?.id;
           if (leaverId && leaverId !== state.currentUser?.id) {
             // Partner left explicitly
-            showPartnerLeftPrompt(refs, 'Your partner');
+            state.partnerConnected = false;
+            // Cancel any pending language change request waiting on partner
+            if (state.langPending && state.langPending.requestedBy === 'me') {
+              try { refs.langWaitingModal?.classList.add('hidden'); } catch { }
+              if (refs.languageSelect) {
+                refs.languageSelect.disabled = false;
+                refs.languageSelect.value = state.language;
+              }
+              state.langPending = null;
+            }
+            schedulePartnerLeftPrompt(refs, 'Your partner');
           }
         }
       },
@@ -311,6 +313,30 @@ function handleBeforeUnload(e) {
   }
 }
 
+async function restoreFromServer() {
+  if (!state.sessionId) return;
+  const res = await fetch(`${COLLAB_CONFIG.httpBase}/sessions/${encodeURIComponent(state.sessionId)}/restore`, {
+    method: 'GET',
+    credentials: 'include'
+  });
+  if (!res.ok) return; // nothing to restore
+  const payload = await res.json().catch(() => null);
+  const latestCode = payload?.latestCode ?? '';
+  const language = payload?.language || 'javascript';
+  try {
+    if (typeof latestCode === 'string' && latestCode.length > 0) {
+      // Replace editor content without generating remote loops
+      const fullRange = state.editor.model.getFullModelRange();
+      state.editor.instance.executeEdits('restore', [{ range: fullRange, text: latestCode, forceMoveMarkers: true }]);
+      state.editor.instance.pushUndoStop();
+    }
+    applyLanguageChange(getDomRefs(), language);
+    state.restoreLoaded = true;
+  } catch (e) {
+    console.error('Failed to apply restored state', e);
+  }
+}
+
 async function handleDisconnect(refs, { manual, message, redirectTo }) {
   if (state.disconnecting) return;
   state.disconnecting = true;
@@ -384,8 +410,32 @@ async function handleDisconnect(refs, { manual, message, redirectTo }) {
   state.disconnecting = false;
 }
 
+function cancelPartnerLeftPrompt() {
+  if (state.partnerLeftTimer) {
+    try { clearTimeout(state.partnerLeftTimer); } catch {}
+    state.partnerLeftTimer = null;
+  }
+}
+
+function schedulePartnerLeftPrompt(refs, displayName) {
+  cancelPartnerLeftPrompt();
+  state.partnerLeftTimer = setTimeout(() => {
+    showPartnerLeftPrompt(refs, displayName);
+  }, 2000);
+}
+
 function showPartnerLeftPrompt(refs, displayName) {
   if (!refs.partnerLeftModal) return;
+  state.partnerConnected = false;
+  // If we were waiting for partner to confirm a language change, cancel that wait
+  if (state.langPending && state.langPending.requestedBy === 'me') {
+    try { refs.langWaitingModal?.classList.add('hidden'); } catch { }
+    if (refs.languageSelect) {
+      refs.languageSelect.disabled = false;
+      refs.languageSelect.value = state.language;
+    }
+    state.langPending = null;
+  }
   const textEl = refs.partnerLeftText;
   if (textEl) {
     textEl.textContent = `${displayName} has left the session. Continue?`;
@@ -408,7 +458,15 @@ function onLocalLanguageSelected(refs, language) {
     if (refs.languageSelect) refs.languageSelect.value = state.language;
     return;
   }
-  // Request partner confirmation
+  // If no partner connected, apply immediately without confirmation
+  const alone = !state.partnerConnected || (Array.isArray(state.participants) && state.participants.length < 2);
+  if (alone) {
+    applyLanguageChange(refs, language);
+    showMessage(`Language changed to ${language}.`, 'success');
+    setTimeout(() => hideMessage(), 3000);
+    return;
+  }
+  // Otherwise, request partner confirmation
   const username = state.currentUser?.username || 'You';
   try {
     state.socket?.send({ type: 'language-request', language, from: state.currentUser?.id, username });
