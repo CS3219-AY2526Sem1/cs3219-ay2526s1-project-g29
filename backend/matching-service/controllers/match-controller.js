@@ -1,6 +1,6 @@
 import { getChannel, MATCH_REQUEST_QUEUE } from "../utils/rabbitmq.js";
 import { validateMatchRequest, getSessionData } from "../models/match-model.js";
-import { cancelMatchRequest, confirmMatch } from "../services/match-processor.js";
+import { cancelMatchRequest, confirmMatch, userHasPendingOrConfirmingMatch, markUserQueued } from "../services/match-processor.js";
 import { notifyUser } from "../middleware/ws-server.js";
 
 export async function requestMatch(req, res) {
@@ -11,18 +11,25 @@ export async function requestMatch(req, res) {
   if (!validation.valid) {
     return res.status(400).json({ error: validation.error });
   }
-  
+
+  // Prevent multiple concurrent match requests
+  if (userHasPendingOrConfirmingMatch(userId)) {
+    return res.status(409).json({
+      error: "User already has an active match request or pending confirmation",
+    });
+  }
+
   try {
     // Fetch user profile from user service
     const userServiceUrl = process.env.USER_SERVICE_URL || "http://user-service:8004";
     console.log(`Fetching user profile from: ${userServiceUrl}/users/internal/users/${userId}`);
     
     const userResponse = await fetch(`${userServiceUrl}/users/internal/users/${userId}`, {
-      method: 'GET',
+      method: "GET",
       headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
-        'X-Internal-Service': 'matching-service'
+        "Content-Type": "application/json",
+        "Authorization": `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
+        "X-Internal-Service": "matching-service"
       }
     });
     
@@ -63,7 +70,10 @@ export async function requestMatch(req, res) {
       Buffer.from(JSON.stringify(matchRequest)),
       { persistent: true }
     );
-    
+
+    // Mark user as queued immediately to close race window
+    markUserQueued(userId);
+
     console.log(`Match request queued for user ${userId}`);
     
     return res.json({

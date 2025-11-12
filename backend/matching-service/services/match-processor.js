@@ -25,8 +25,33 @@ const MAX_SKILL_THRESHOLD = Number(process.env.MAX_SKILL_THRESHOLD) || 300; // M
 const MATCH_CHECK_INTERVAL = 5000; // Check for matches every 5 seconds
 
 // Confirmation tracking
-const pendingConfirmations = new Map(); // sessionId -> { user1: {userId, confirmed}, user2: {userId, confirmed}, timeout }
-const CONFIRMATION_TIMEOUT_MS = 30000; // 30 seconds to confirm
+const pendingConfirmations = new Map(); // sessionId -> { user1, user2, ... }
+// Add tracking for users with an active queued/confirming match
+const queuedUsers = new Set();
+
+// Exported helper functions for controller
+export function isUserQueued(userId) {
+  return queuedUsers.has(userId);
+}
+export function userHasPendingOrConfirmingMatch(userId) {
+  // Already marked queued
+  if (queuedUsers.has(userId)) return true;
+  // Scan queues (in case of restart without mark)
+  for (const queue of pendingMatches.values()) {
+    if (queue.some(r => r.userId === userId)) return true;
+  }
+  // Scan confirmations
+  for (const confirmation of pendingConfirmations.values()) {
+    if (confirmation.user1.userId === userId || confirmation.user2.userId === userId) return true;
+  }
+  return false;
+}
+export function markUserQueued(userId) {
+  queuedUsers.add(userId);
+}
+export function unmarkUserQueued(userId) {
+  queuedUsers.delete(userId);
+}
 
 export async function startMatchProcessor() {
   const channel = getChannel();
@@ -61,6 +86,12 @@ export async function startMatchProcessor() {
 
 async function processMatchRequest(request) {
   const { userId, topics, difficulty, questionStats, timestamp } = request;
+  // Prevent duplicate insertion if already queued (defensive)
+  if (queuedUsers.has(userId)) {
+    console.log(`Duplicate match request ignored for user ${userId}`);
+    return;
+  }
+  markUserQueued(userId);
   
   // Normalize difficulty for queuing
   const difficultyKey = difficulty.toLowerCase();
@@ -83,11 +114,11 @@ async function processMatchRequest(request) {
     await executeMatch(queue, match, { userId, topics, questionStats }, difficultyKey, difficulty);
   } else {
     // No immediate match, add to queue for delayed matching
-    queue.push({ 
-      userId, 
-      topics, 
-      difficulty, 
-      questionStats, 
+    queue.push({
+      userId,
+      topics,
+      difficulty,
+      questionStats,
       timestamp,
       skillScore: userSkillScore,
       joinedAt: Date.now() // Track when user joined queue
@@ -378,6 +409,7 @@ function setMatchTimeout(userId, difficultyKey) {
     });
     
     timeoutTrackers.delete(userId);
+    unmarkUserQueued(userId); // release so user can request again
   }, MATCH_TIMEOUT_MS);
   
   timeoutTrackers.set(userId, timeoutId);
@@ -408,7 +440,9 @@ export function cancelMatchRequest(userId) {
       break;
     }
   }
-  
+  if (removed) {
+    unmarkUserQueued(userId);
+  }
   return removed;
 }
 
@@ -540,6 +574,10 @@ async function finalizeBothConfirmedMatch(sessionId, confirmation) {
     matchQuality: matchInfo.quality,
     message: "Both users confirmed! Starting collaboration..."
   });
+  
+  // After final confirmation, allow new match requests
+  unmarkUserQueued(user1.userId);
+  unmarkUserQueued(user2.userId);
 }
 
 function setConfirmationTimeout(sessionId) {
@@ -589,7 +627,8 @@ function requeueUsers(users, difficulty) {
   const queue = pendingMatches.get(difficultyKey) || [];
   
   users.forEach(user => {
-    if (user.confirmed === false) { // Only requeue if they didn't confirm
+    if (user.confirmed === false) {
+      // Keep them queued (do not unmark) since they re-enter matchmaking
       queue.unshift({ // Add to front for priority
         userId: user.userId,
         topics: user.userInfo.topics,
