@@ -23,11 +23,18 @@ const SKILL_RELAXATION_TIME = Number(process.env.SKILL_RELAXATION_TIME) || 60000
 const INITIAL_SKILL_THRESHOLD = Number(process.env.INITIAL_SKILL_THRESHOLD) || 10; // Initial max skill diff
 const MAX_SKILL_THRESHOLD = Number(process.env.MAX_SKILL_THRESHOLD) || 300; // Maximum threshold
 const MATCH_CHECK_INTERVAL = 5000; // Check for matches every 5 seconds
+const CONFIRMATION_TIMEOUT_MS = Number(process.env.CONFIRMATION_TIMEOUT_MS) || 30000; // 30s to accept/reject
 
 // Confirmation tracking
 const pendingConfirmations = new Map(); // sessionId -> { user1, user2, ... }
 // Add tracking for users with an active queued/confirming match
 const queuedUsers = new Set();
+// Track when a user was marked queued (to safely sweep orphans)
+const queuedMarkTimes = new Map();
+
+// Orphan sweep config (override via ENV if needed)
+const ORPHAN_SWEEP_INTERVAL = Number(process.env.ORPHAN_SWEEP_INTERVAL) || 5000; // 5s
+const ORPHAN_SWEEP_GRACE_MS = Number(process.env.ORPHAN_SWEEP_GRACE_MS) || 3000; // 3s
 
 // Exported helper functions for controller
 export function isUserQueued(userId) {
@@ -48,9 +55,11 @@ export function userHasPendingOrConfirmingMatch(userId) {
 }
 export function markUserQueued(userId) {
   queuedUsers.add(userId);
+  queuedMarkTimes.set(userId, Date.now());
 }
 export function unmarkUserQueued(userId) {
   queuedUsers.delete(userId);
+  queuedMarkTimes.delete(userId);
 }
 
 export async function startMatchProcessor() {
@@ -80,19 +89,41 @@ export async function startMatchProcessor() {
   
   // Start periodic match checking for delayed matches
   startPeriodicMatching();
-  
+
+  // Start orphan sweep to purge stuck "queued" users (e.g., refresh before consumer attaches timeout)
+  setInterval(sweepOrphanedQueuedUsers, ORPHAN_SWEEP_INTERVAL);
+
   console.log("Enhanced match processor listening for requests");
 }
 
 async function processMatchRequest(request) {
   const { userId, topics, difficulty, questionStats, timestamp } = request;
-  // Prevent duplicate insertion if already queued (defensive)
-  if (queuedUsers.has(userId)) {
-    console.log(`Duplicate match request ignored for user ${userId}`);
+
+  // Do NOT skip just because queuedUsers has userId (controller marks it pre-queue)
+  // Instead, skip only if user is already active in a queue or a confirmation
+  const alreadyInQueue = (() => {
+    for (const q of pendingMatches.values()) {
+      if (q.some(r => r.userId === userId)) return true;
+    }
+    return false;
+  })();
+  const alreadyInConfirmation = (() => {
+    for (const conf of pendingConfirmations.values()) {
+      if (conf.user1.userId === userId || conf.user2.userId === userId) return true;
+    }
+    return false;
+  })();
+
+  if (alreadyInQueue || alreadyInConfirmation) {
+    console.log(`Duplicate AMQP message ignored for active user ${userId}`);
     return;
   }
-  markUserQueued(userId);
-  
+
+  // Mark (idempotent) so new HTTP requests are blocked
+  if (!queuedUsers.has(userId)) {
+    markUserQueued(userId);
+  }
+
   // Normalize difficulty for queuing
   const difficultyKey = difficulty.toLowerCase();
   
@@ -102,7 +133,13 @@ async function processMatchRequest(request) {
   }
   
   const queue = pendingMatches.get(difficultyKey);
-  
+
+  // Extra guard: if somehow already in this queue, skip enqueue
+  if (queue.some(r => r.userId === userId)) {
+    console.log(`User ${userId} already present in queue for ${difficultyKey}, skipping enqueue`);
+    return;
+  }
+
   // Calculate skill score for this user
   const userSkillScore = calculateSkillScore(questionStats);
   
@@ -423,13 +460,45 @@ function clearMatchTimeout(userId) {
   }
 }
 
+// Sweep any users marked queued but not actually active anywhere
+function sweepOrphanedQueuedUsers() {
+  const now = Date.now();
+
+  // Build a set of all actively tracked users
+  const active = new Set();
+  // In queues
+  for (const queue of pendingMatches.values()) {
+    for (const req of queue) active.add(req.userId);
+  }
+  // In confirmations
+  for (const conf of pendingConfirmations.values()) {
+    active.add(conf.user1.userId);
+    active.add(conf.user2.userId);
+  }
+  // With timeouts scheduled (queued users waiting)
+  for (const uid of timeoutTrackers.keys()) {
+    active.add(uid);
+  }
+
+  for (const uid of Array.from(queuedUsers)) {
+    const markedAt = queuedMarkTimes.get(uid) || 0;
+    const tooOld = now - markedAt >= ORPHAN_SWEEP_GRACE_MS;
+    const notActive = !active.has(uid);
+
+    if (tooOld && notActive) {
+      console.warn(`🧹 Clearing orphaned queued user ${uid}`);
+      unmarkUserQueued(uid);
+    }
+  }
+}
+
 export function cancelMatchRequest(userId) {
   let removed = false;
   
   // Clear timeout
   clearMatchTimeout(userId);
-  
-  // Search all difficulty queues
+
+  // 1) Remove from any pending queue
   for (const [difficultyKey, queue] of pendingMatches.entries()) {
     const idx = queue.findIndex((req) => req.userId === userId);
     if (idx >= 0) {
@@ -440,10 +509,52 @@ export function cancelMatchRequest(userId) {
       break;
     }
   }
+
+  // 2) If in confirmation, treat as rejection/cancel and requeue partner
+  if (!removed) {
+    for (const [sessionId, confirmation] of pendingConfirmations.entries()) {
+      const isUser1 = confirmation.user1.userId === userId;
+      const isUser2 = confirmation.user2.userId === userId;
+      if (isUser1 || isUser2) {
+        const confirmingUser = isUser1 ? confirmation.user1 : confirmation.user2;
+        const otherUser = isUser1 ? confirmation.user2 : confirmation.user1;
+
+        clearConfirmationTimeout(sessionId);
+        pendingConfirmations.delete(sessionId);
+
+        notifyUser(confirmingUser.userId, {
+          type: "MATCH_REJECTED",
+          message: "You cancelled the match",
+          sessionId
+        });
+        notifyUser(otherUser.userId, {
+          type: "MATCH_REJECTED",
+          message: "Your partner cancelled the match",
+          sessionId
+        });
+
+        // Requeue only the partner (cancelled user is leaving)
+        requeueUsers([ { ...otherUser, confirmed: false } ], confirmation.matchInfo.difficulty);
+
+        removed = true;
+        break;
+      }
+    }
+  }
+
+  // 3) If still not removed but user is stuck as "queued", unmark to unblock
+  if (!removed && queuedUsers.has(userId)) {
+    console.warn(`🧹 Clearing stuck queued user on cancel: ${userId}`);
+    unmarkUserQueued(userId);
+    try { notifyUser(userId, { type: "CANCELLED" }); } catch {}
+    return true;
+  }
+
   if (removed) {
     unmarkUserQueued(userId);
+    return true;
   }
-  return removed;
+  return false;
 }
 
 ////////// Confirmation pop up /////////////
@@ -530,28 +641,61 @@ export function confirmMatch(userId, sessionId, accepted) {
 async function finalizeBothConfirmedMatch(sessionId, confirmation) {
   const { user1, user2, matchInfo } = confirmation;
   
-  // Notify collaboration service
-  const ok = await notifyCollabMatch({
+  // Notify collaboration service and get the question used
+  const result = await notifyCollabMatch({
     sessionId,
     users: [user1.userId, user2.userId],
     matchedTopics: matchInfo.commonTopics,
     difficulty: matchInfo.difficulty,
   });
-  
-  // No question found
-  if (!ok) {
-    const msg = "Error: No question found for selected difficulty and topics. Please try again with different matching criteria.";
-    notifyUser(user1.userId, {
-      type: "MATCH_ERROR_NO_QUESTION",
-      message: msg,
-      sessionId,
-    });
-    notifyUser(user2.userId, {
-      type: "MATCH_ERROR_NO_QUESTION",
-      message: msg,
-      sessionId,
-    });
+
+  const ok = !!result?.ok;
+  const question = result?.question || null;
+
+  if (!question) {
+    const msg = "No question found for selected difficulty and topics. Please try again with different matching criteria.";
+    console.warn('[matching-service] finalize match: question not found', matchInfo);
+    notifyUser(user1.userId, { type: "MATCH_ERROR_NO_QUESTION", message: msg, sessionId });
+    notifyUser(user2.userId, { type: "MATCH_ERROR_NO_QUESTION", message: msg, sessionId });
     return;
+  }
+
+  if (!ok) {
+    const msg = "Failed to create collaboration session. Please try again.";
+    console.warn('[matching-service] finalize match: collab session create failed', result?.error);
+    notifyUser(user1.userId, { type: "MATCH_ERROR_SESSION_CREATE", message: msg, sessionId });
+    notifyUser(user2.userId, { type: "MATCH_ERROR_SESSION_CREATE", message: msg, sessionId });
+    return;
+  }
+
+  // Update users' attempted question stats internally (no browser auth required)
+  try {
+    const userServiceUrl = process.env.USER_SERVICE_URL || "http://user-service:8004";
+    const questionId = question._id || question.id;
+
+    // Best-effort; do not block redirect on failure
+    await Promise.allSettled([
+      fetch(`${userServiceUrl}/users/internal/users/${user1.userId}/questions-attempted`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
+          'X-Internal-Service': 'matching-service',
+        },
+        body: JSON.stringify({ questionId, partner: user2.username || null }),
+      }),
+      fetch(`${userServiceUrl}/users/internal/users/${user2.userId}/questions-attempted`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.COLLAB_INTERNAL_TOKEN}`,
+          'X-Internal-Service': 'matching-service',
+        },
+        body: JSON.stringify({ questionId, partner: user1.username || null }),
+      }),
+    ]);
+  } catch (err) {
+    console.warn('[matching-service] failed to update question attempts:', err?.message || err);
   }
   
   // Notify both users - final match confirmed
@@ -562,6 +706,7 @@ async function finalizeBothConfirmedMatch(sessionId, confirmation) {
     matchedTopics: matchInfo.commonTopics,
     difficulty: matchInfo.difficulty,
     matchQuality: matchInfo.quality,
+    questionId: question._id || question.id,
     message: "Both users confirmed! Starting collaboration..."
   });
   
@@ -572,6 +717,7 @@ async function finalizeBothConfirmedMatch(sessionId, confirmation) {
     matchedTopics: matchInfo.commonTopics,
     difficulty: matchInfo.difficulty,
     matchQuality: matchInfo.quality,
+    questionId: question._id || question.id,
     message: "Both users confirmed! Starting collaboration..."
   });
   

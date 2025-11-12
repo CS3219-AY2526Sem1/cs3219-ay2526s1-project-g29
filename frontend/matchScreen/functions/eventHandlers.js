@@ -88,18 +88,18 @@ export async function handleFindMatch(event) {
 // Cancel Match Handler
 export async function handleCancelMatch() {
     if (!currentUser) return;
-    
+
     try {
         await cancelMatch(currentUser.userId);
-        resetMatchState();
         showMessage("Match search cancelled", "info");
-        
     } catch (error) {
         console.error("Error cancelling match:", error);
-        showMessage("Failed to cancel match search", "error");
+        showMessage(error.message || "Failed to cancel match search", "error");
+    } finally {
+        // Always reset UI so user isn't stuck behind overlay
+        resetMatchState();
     }
 }
-
 // Navigation Handlers
 export function handleCancel() {
     navigateTo(config.routes.dashboard);
