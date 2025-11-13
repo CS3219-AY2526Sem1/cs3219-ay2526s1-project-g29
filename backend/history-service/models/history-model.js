@@ -3,7 +3,9 @@ const mongoose = require('mongoose');
 const participantSchema = new mongoose.Schema({
     id: { type: String, required: true },
     username: { type: String, default: 'anonymous' },
-});
+    latestCode: { type: String, default: '' },
+    language: { type: String, default: 'javascript' },
+}, { _id: false });
 
 const historySchema = new mongoose.Schema({
     sessionId: { type: String, required: true, index: true },

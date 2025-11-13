@@ -140,8 +140,8 @@ async function loadHistory(userId) {
                     topics: questionData.topics || [],
                     attemptedAt: record.updatedAt,
                     partner: partner?.username || 'Unknown',
-                    latestCode: record.latestCode,
-                    language: record.language || 'javascript',
+                    latestCode: currentUserParticipant.latestCode || record.latestCode || '',
+                    language: currentUserParticipant.language || record.language || 'javascript',
                     questionData: questionData,
                 });
             }
