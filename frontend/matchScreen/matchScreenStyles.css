@@ -838,3 +838,20 @@
         flex-direction: column;
     }
 }
+
+/* Ensure toasts appear above matching/confirmation overlays */
+.message-container {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 4000; /* higher than .matching-status (2000) and .confirmation-dialog (3000) */
+  max-width: 320px;
+  pointer-events: none; /* let clicks pass through overlay area */
+}
+.message-text {
+  pointer-events: auto; /* allow closing/toast interactions if any */
+}
+/* keep hidden override */
+.message-container.hidden {
+  display: none !important;
+}

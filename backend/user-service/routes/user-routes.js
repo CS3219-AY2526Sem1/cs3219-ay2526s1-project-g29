@@ -55,6 +55,23 @@ router.get('/internal/users/:id', async (req, res) => {
   }
 });
 
+// Internal endpoint to add attempted question (no cookie/JWT; internal token only)
+router.post('/internal/users/:id/questions-attempted', async (req, res) => {
+  try {
+    const authHeader = req.headers['authorization'];
+    const token = authHeader?.replace('Bearer ', '');
+    if (token !== process.env.COLLAB_INTERNAL_TOKEN) {
+      return res.status(403).json({ error: 'Unauthorized internal service call' });
+    }
+    // Reuse existing controller logic
+    const { addQuestionAttempted } = await import('../controller/user-controller.js');
+    return addQuestionAttempted(req, res);
+  } catch (err) {
+    console.error('Internal addQuestionAttempted error:', err);
+    return res.status(500).json({ error: 'Internal error while adding attempted question' });
+  }
+});
+
 router.get("/profile", verifyAccessToken, getUserProfile);
 
 router.get("/questions-attempted", verifyAccessToken, getQuestionsAttempted);
