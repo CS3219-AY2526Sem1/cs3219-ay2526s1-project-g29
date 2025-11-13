@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>PeerPrep - Collaboration</title>
+    <link rel="icon" type="image/svg+xml" href="../shared/logo.svg" />
+    <link rel="stylesheet" href="../shared/sharedStyles.css" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.44.0/min/vs/loader.min.js" defer></script>
+  </head>
+  <body>
+    <div class="collab-layout">
+      <header class="collab-header">
+        <div class="logo">PeerPrep</div>
+      </header>
+
+      <main class="collab-content">
+        <section class="session-panel">
+          <div class="question-card">
+            <div id="questionContainer" class="question-container"></div>
+          </div>
+
+          <div class="participants-card">
+            <h3>Participants</h3>
+            <ul id="participantsList" class="participants-list"></ul>
+          </div>
+
+          <button type="button" class="disconnect-btn" id="disconnectBtn" disabled>
+            Disconnect
+          </button>
+        </section>
+
+        <section class="editor-panel">
+          <div class="editor-header">
+            <div class="language-group">
+              <select id="languageSelect" class="language-select">
+                <option value="javascript">JavaScript</option>
+                <option value="typescript">TypeScript</option>
+                <option value="python">Python</option>
+                <option value="java">Java</option>
+                <option value="csharp">C#</option>
+                <option value="php">PHP</option>
+              </select>
+            </div>
+            <div class="editor-actions">
+              <button
+                type="button"
+                class="chat-toggle-btn"
+                id="chatToggleBtn"
+                title="Toggle chat"
+              >
+                💬 Chat
+              </button>
+              <button
+                type="button"
+                class="ai-explain-btn"
+                id="aiExplainBtn"
+                title="Explain selected code with AI"
+              >
+                ✨ Explain Code
+              </button>
+            </div>
+          </div>
+          <div id="editorContainer" class="editor-container"></div>
+        </section>
+
+        <aside class="chat-panel" id="chatPanel">
+          <div class="chat-header">
+            <h3>Chat</h3>
+            <button type="button" class="close-btn" id="chatCloseBtn" title="Close chat">×</button>
+          </div>
+          
+          <div class="chat-messages" id="chatMessages">
+            <div class="chat-empty-state">
+              No messages yet. Start chatting with your partner!
+            </div>
+          </div>
+          
+          <div class="chat-input-container">
+            <textarea 
+              id="chatInput" 
+              class="chat-input" 
+              placeholder="Type a message... (Shift+Enter for new line)"
+              rows="2"
+            ></textarea>
+            <button type="button" id="chatSendBtn" class="chat-send-btn" title="Send message">
+              Send
+            </button>
+          </div>
+        </aside>
+
+        <aside class="ai-panel" id="aiPanel">
+          <div class="ai-panel-header">
+            <h3>AI Assistant</h3>
+            <button
+              type="button"
+              class="close-btn"
+              id="aiCloseBtn"
+              title="Close AI panel"
+            >
+              ×
+            </button>
+          </div>
+          <div class="ai-panel-content">
+            <div id="aiOutput" class="ai-output"> 
+              <!-- Default state -->
+              <div class="ai-placeholder">
+                Select code in the editor and click "Explain Code" to get AI
+                assistance.
+              </div>
+
+              <!-- Loading state -->
+              <div class="ai-loading" style="display: none">
+                <div class="ai-loading-spinner"></div>
+                <div>Generating explanation...</div>
+              </div>
+
+              <!-- Error state -->
+              <div class="ai-error" style="display: none">
+                <strong>Error:</strong> <span class="ai-error-message"></span>
+              </div>
+
+              <!-- Explanation state -->
+              <div class="ai-explanation" style="display: none"></div>
+            </div>
+          </div>
+        </aside>
+      </main>
+
+      <div id="messageContainer" class="message-container hidden">
+        <div id="messageText" class="message-text"></div>
+      </div>
+
+      <!-- Language Change Request -->
+      <div id="langRequestModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langRequestText">
+        <div class="modal-card">
+          <p id="langRequestText" class="modal-text"></p>
+          <div class="modal-actions">
+            <button type="button" id="langAcceptBtn" class="btn-primary">Accept</button>
+            <button type="button" id="langRejectBtn" class="btn-primary danger">Reject</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Waiting Modal -->
+      <div id="langWaitingModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="langWaitingText">
+        <div class="modal-card">
+          <h3 id="langWaitingText" class="modal-title">Waiting for partner confirmation...</h3>
+        </div>
+      </div>
+
+      <!-- Partner Left Modal -->
+      <div id="partnerLeftModal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="partnerLeftText">
+        <div class="modal-card">
+          <h3 class="modal-title">Session Notice</h3>
+          <p id="partnerLeftText" class="modal-text">Your partner has left the session. Continue?</p>
+          <div class="modal-actions">
+            <button type="button" id="partnerLeftYesBtn" class="btn-primary">Yes</button>
+            <button type="button" id="partnerLeftNoBtn" class="btn-primary danger">No</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <script type="module" src="functions/main.js"></script>
+  </body>
+</html>

@@ -1,0 +1,16 @@
+node_modules
+.venv
+venv
+dist
+build
+.cache
+.git
+.gitignore
+Dockerfile*
+docker-compose*.yml
+.env
+.env.*
+!.env.example
+coverage
+__pycache__
+*.log
